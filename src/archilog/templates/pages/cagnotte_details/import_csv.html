@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{% block title %}Archilog — {{ nom }} · Importer CSV{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <a class="back-link" href="{{ url_for('cagnotte_depenses', nom=nom) }}">
+    <svg width="15" height="15"><use href="#icon-arrow-left"></use></svg>
+    <span>Retour aux dépenses</span>
+  </a>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ nom }}</h1>
+    <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+  </div>
+
+  {# L'onglet "Dépenses" reste actif car l'import est une sous-action de cet onglet #}
+  {{ tabs_cagnotte(nom, 'depenses') }}
+
+  <div class="card">
+    <div class="card-title">Importer des dépenses depuis un CSV</div>
+
+    {# ── Documentation du format attendu ── #}
+    <div class="section blue">
+      <div class="section-title">Format attendu</div>
+      <p style="font-size:.82rem;line-height:1.7;">
+        Le fichier CSV doit contenir au minimum les colonnes
+        <code>participant</code> et <code>montant</code>.<br>
+        Colonnes optionnelles reconnues :
+        <code>date</code>, <code>libelle</code>, <code>categorie</code>.<br>
+        {#
+          Séparateur auto-détecté dans views.py (import_csv_route) :
+          on compte les occurrences de ";" et "," sur la première ligne.
+          Encodage UTF-8 avec ou sans BOM (utf-8-sig géré par Python).
+          Alias acceptés : "nom" → participant, "description" → libelle.
+        #}
+        Séparateur auto-détecté : <code>;</code> ou <code>,</code>. Encodage : UTF-8.
+      </p>
+      {# Exemple de fichier CSV montrant le format attendu (bloc monospace) #}
+      <div class="csv-preview">participant;montant;date;libelle;categorie
+Alice;34.50;15/06/2025;Courses Monoprix;Courses
+Romain;120;16/06/2025;AirBnB;Hébergement</div>
+    </div>
+
+    {#
+      Formulaire d'upload multipart.
+      enctype="multipart/form-data" est obligatoire pour transmettre le fichier.
+      POST vers import_csv_route() (views.py) qui parse, valide et insère.
+      Pattern PRG : redirige vers cagnotte_depenses après traitement.
+    #}
+    <form method="post" action="{{ url_for('import_csv_route', nom=nom) }}"
+          enctype="multipart/form-data" style="margin-top:1.25rem;">
+      <div class="field">
+        <label for="csv-file">Fichier CSV</label>
+        {# accept=".csv,.txt" : suggestion au sélecteur de fichier (non bloquant) #}
+        <input id="csv-file" type="file" name="csv_file" accept=".csv,.txt" required
+               style="padding:.4rem .6rem;cursor:pointer;">
+      </div>
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" type="submit">Importer</button>
+        <a class="btn btn-ghost"
+           href="{{ url_for('cagnotte_depenses', nom=nom) }}">Annuler</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

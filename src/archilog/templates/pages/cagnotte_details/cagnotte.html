@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{% block title %}Archilog — {{ nom }}{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <a class="back-link" href="{{ url_for('home') }}">
+    <svg width="15" height="15"><use href="#icon-house"></use></svg>
+    <span>Toutes les cagnottes</span>
+  </a>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ nom }}</h1>
+    <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+  </div>
+
+  {# Onglet "Vue d'ensemble" actif #}
+  {{ tabs_cagnotte(nom, 'overview') }}
+
+  <div class="card">
+    <div class="card-title">Analyse de la cagnotte</div>
+
+    {# ── Chiffres clés ── #}
+    <div class="section purple">
+      <div class="section-title">Chiffres clés</div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat-label">Total dépenses</span>
+          <span class="stat-value">{{ calcul.total }}€</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Part individuelle</span>
+          <span class="stat-value">{{ calcul.part }}€</span>
+        </div>
+        <div class="stat">
+          {# calcul.par_participant est trié par montant décroissant (domain.py) #}
+          <span class="stat-label">Participants</span>
+          <span class="stat-value">{{ calcul.par_participant|length }}</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Opérations</span>
+          <span class="stat-value">{{ depenses|length }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    {# ── Barres de répartition par participant ── #}
+    {# Affichées seulement s'il y a au moins un participant avec des dépenses #}
+    {% if calcul.par_participant %}
+    {% set total   = calcul.total %}
+    {% set pp      = calcul.par_participant %}
+    {# Palette de 5 couleurs cycliques — au-delà du 5e participant,
+       la couleur #94a3b8 (gris) est utilisée comme fallback. #}
+    {% set palette = ['#7c3aed','#2563eb','#059669','#d97706','#dc2626'] %}
+
+    <div class="section-title" style="color:var(--purple);margin-bottom:.85rem;">
+      Répartition par participant
+    </div>
+
+    {% for p in pp %}
+      {# Pourcentage arrondi à 1 décimale ; 0 si total = 0 (cagnotte vide) #}
+      {% set pct   = ((p.total / total * 100) | round(1)) if total > 0 else 0 %}
+      {# loop.index0 < 5 → couleur de la palette ; sinon gris neutre #}
+      {% set color = palette[loop.index0] if loop.index0 < 5 else '#94a3b8' %}
+      <div class="part-bar-row">
+        <div class="part-bar-header">
+          <span class="part-bar-name">{{ p.nom }}</span>
+          <span class="part-bar-meta">
+            <span class="mono" style="font-size:.78rem;">{{ p.total }}€</span>
+            <span class="part-bar-pct">{{ pct }}%</span>
+          </span>
+        </div>
+        <div class="part-bar-track">
+          {# Largeur et couleur injectées inline : seule façon sans JS
+             de rendre les barres proportionnelles côté serveur. #}
+          <div class="part-bar-fill" style="width:{{ pct }}%;background:{{ color }};"></div>
+        </div>
+      </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if depenses|length > 0 %}
+      <div class="divider"></div>
+    {% endif %}
+
+    {# ── Dernières dépenses (5 max) ── #}
+    <div class="section blue">
+      <div class="section-title"
+           style="display:flex;justify-content:space-between;align-items:center;">
+        Dernières dépenses
+        {# Lien "Voir toutes" uniquement si des dépenses existent #}
+        {% if last5 %}
+        <a class="btn btn-ghost" style="padding:.3rem .7rem;font-size:.75rem;"
+           href="{{ url_for('cagnotte_depenses', nom=nom) }}">
+          Voir toutes →
+        </a>
+        {% endif %}
+      </div>
+      {% if last5 %}
+        {# last5 = 5 dernières dépenses en ordre chronologique inverse (views.py) #}
+        <table class="table" style="margin-top:.5rem;">
+          <thead>
+            <tr>
+              <th>Participant</th><th>Libellé</th><th>Montant</th><th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for d in last5 %}
+            <tr>
+              <td><strong>{{ d.participant }}</strong></td>
+              {# Troncature CSS inline : libellé long → ellipsis #}
+              <td class="muted"
+                  style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                {{ d.libelle or "—" }}
+              </td>
+              <td class="mono">{{ d.montant }}€</td>
+              <td class="muted">{{ d.date or "—" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p class="empty" style="margin-top:.5rem;">
+          Aucune dépense enregistrée pour l'instant.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    {# ── Remboursements ── #}
+    {# On ne montre que les non-effectués dans la vue d'ensemble ;
+       la page Équilibre montre tous les remboursements avec toggle. #}
+    {% set pending = calcul.transactions | rejectattr('effectue') | list %}
+    {% if pending %}
+    {# Cas 1 : remboursements en attente #}
+    <div class="section orange">
+      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+        Remboursements à effectuer
+        {# Lien "Voir tous" affiché uniquement s'il y en a plus de 5 (tableau tronqué) #}
+        {% if pending|length > 5 %}
+        <a class="btn btn-ghost" style="padding:.3rem .7rem;font-size:.75rem;"
+           href="{{ url_for('cagnotte_equilibre', nom=nom) }}">
+          Voir tous →
+        </a>
+        {% endif %}
+      </div>
+      <table class="table">
+        <thead>
+          <tr><th>Débiteur</th><th></th><th>Créditeur</th><th>Montant</th></tr>
+        </thead>
+        <tbody>
+          {# Affiche au maximum 5 remboursements ; les suivants sont comptés sous le tableau #}
+          {% for t in pending[:5] %}
+          <tr>
+            <td><strong>{{ t.debiteur }}</strong></td>
+            <td class="arrow">→</td>
+            <td>{{ t.crediteur }}</td>
+            <td class="mono">{{ t.montant }}€</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% if pending|length > 5 %}
+      <div style="margin-top:.6rem;font-size:.78rem;color:var(--text-sub);">
+        + {{ pending|length - 5 }} autre(s) remboursement(s) en attente
+      </div>
+      {% endif %}
+    </div>
+
+    {% elif calcul.transactions %}
+    {# Cas 2 : toutes les transactions ont été marquées effectuées #}
+    <div class="section green">
+      <div class="section-title">Tous les virements effectués ✓</div>
+      <p style="display:flex;align-items:center;gap:.5rem;">
+        <svg width="16" height="16" style="color:var(--green);flex-shrink:0;">
+          <use href="#icon-check-circle"></use>
+        </svg>
+        Tous les remboursements ont été marqués comme effectués.
+      </p>
+    </div>
+
+    {% else %}
+    {# Cas 3 : aucune transaction nécessaire (dépenses parfaitement équilibrées
+               ou aucune dépense) #}
+    <div class="section green">
+      <div class="section-title">Équilibre des dépenses </div>
+      <p style="display:flex;align-items:center;gap:.5rem;">
+        <svg width="16" height="16" style="color:var(--green);flex-shrink:0;">
+          <use href="#icon-check-circle"></use>
+        </svg>
+        Tout est parfaitement équilibré, aucun remboursement nécessaire !
+      </p>
+    </div>
+    {% endif %}
+
+    <div class="divider"></div>
+
+    {# ── Actions ── #}
+    <div class="btn-row">
+      {# Bouton "Ajouter une dépense" affiché seulement si la cagnotte est vide #}
+      {% if not depenses %}
+      <a class="btn btn-primary" href="{{ url_for('cagnotte_ajouter' , nom=nom) }}">
+        <svg width="13" height="13" aria-hidden="true"><use href="#icon-list"></use></svg>
+        Ajouter une dépense
+      </a>
+      {% endif %}
+      {# Bouton de suppression toujours visible (action destructive accessible depuis la vue d'ensemble) #}
+      <a class="btn btn-primary"
+         href="{{ url_for('confirm_delete', nom=nom) }}">Supprimer la cagnotte</a>
+    </div>
+</div>
+</div>
+{% endblock %}

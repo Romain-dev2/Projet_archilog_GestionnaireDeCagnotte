@@ -1,0 +1,108 @@
+{#
+  components/toast.html
+  ─────────────────────────────────────────────────────────────────────────
+  Snackbar non-intrusive. Inclus depuis base.html juste avant </body>.
+
+  Fonctionnement :
+    1. Le <div#toast> est le conteneur persistant (toujours dans le DOM).
+    2. showToast(message, type) l'affiche / anime via main.js.
+    3. Si Flask a des messages flash, un bloc <script> inline les injecte
+       immédiatement après le chargement de main.js — c'est le seul JS
+       inline autorisé ici (nécessaire pour passer Jinja → JS).
+
+  Types : "success" | "error" | "info" | "warning"
+  Auto-hide : success + info après 3 s ; error = fermeture manuelle.
+
+  Accessibilité :
+    - role="status" + aria-live="polite" → le lecteur d'écran annonce
+      le contenu sans interrompre ce qu'il lit.
+    - aria-atomic="true" → lit le message entier à chaque mise à jour.
+    - aria-hidden="true" par défaut → ignoré tant que le toast est masqué.
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{# ── Conteneur toast (toujours présent dans le DOM, invisible par défaut) ── #}
+<div id="toast"
+     class="toast"
+     role="status"
+     aria-live="polite"
+     aria-atomic="true"
+     aria-hidden="true">
+
+  {# aria-hidden="true" sur l'icône : décoration pure, le message texte suffit #}
+  <span id="toastIcon"  class="toast__icon"  aria-hidden="true"></span>
+  <span id="toastMsg"   class="toast__msg"></span>
+
+  <button id="toastClose"
+          class="toast__close"
+          type="button"
+          aria-label="Fermer la notification">
+    {# SVG inline plutôt que sprite : le toast est utilisé avant que le DOM
+       soit totalement prêt et l'icône doit être disponible immédiatement. #}
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  </button>
+</div>
+
+{# ── Injection des messages Flask → showToast() ── #}
+{# Ce bloc <script> inline est intentionnel : seul Jinja peut ponter
+   les messages flash vers le JS. Pas de logique ici, juste des données.
+   Les messages sont triés par catégorie pour afficher les erreurs en dernier
+   (les plus récentes dans la file restent visibles). #}
+
+{% with messages = get_flashed_messages(with_categories=True) %}
+  {% if messages %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+      {# S'il y a plusieurs messages, on affiche le dernier —
+         les erreurs sont prioritaires sur success/info. #}
+
+      {# ✅ MODIF :
+         Implémentation d'une file d'attente JS pour éviter que plusieurs
+         messages flash dans une même requête ne s'écrasent mutuellement.
+
+         Au lieu d'appeler showToast immédiatement pour chaque message,
+         on construit une queue JS qui sera traitée séquentiellement.
+
+         main.js peut ensuite afficher les toasts avec un délai entre
+         chacun (ex: 300 ms ou après disparition du précédent).
+      #}
+
+      const toastQueue = [];
+
+      {% set flash_queue = messages | sort(attribute=0, reverse=False) %}
+      {% for category, message in flash_queue %}
+        toastQueue.push({
+          message: {{ message | tojson }},
+          type: {{ category | tojson }}
+        });
+      {% endfor %}
+
+      {# ✅ MODIF :
+         Si main.js expose une fonction utilitaire showToastQueue(),
+         on lui passe directement la queue.
+
+         Sinon fallback : affichage séquentiel simple avec délai.
+      #}
+
+      if (typeof showToastQueue === "function") {
+        showToastQueue(toastQueue);
+      } else {
+        let delay = 0;
+        toastQueue.forEach(t => {
+          setTimeout(() => {
+            showToast(t.message, t.type);
+          }, delay);
+          delay += 3200; // délai entre chaque toast (~durée auto-hide)
+        });
+      }
+
+    });
+  </script>
+  {% endif %}
+{% endwith %}

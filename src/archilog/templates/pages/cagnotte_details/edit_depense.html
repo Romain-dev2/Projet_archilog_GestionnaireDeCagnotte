@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{#
+  pages/cagnotte_details/edit_depense.html
+  ─────────────────────────────────────────────────────────────────────────
+  Page dédiée d'édition d'une dépense (fallback sans AJAX).
+
+  Ce template est utilisé dans deux cas :
+    1. L'utilisateur a désactivé JavaScript → le bouton d'édition du tableau
+       navigue directement ici via son href.
+    2. La route edit_depense() est atteinte par une soumission POST
+       invalide → elle redirige ici avec un message flash.
+
+  Normalement (JS activé), l'édition passe par le modal AJAX dans
+  depenses.html et cette page n'est pas affichée.
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{% block title %}Archilog — {{ nom }} · Modifier une dépense{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <a class="back-link" href="{{ url_for('cagnotte_depenses', nom=nom) }}">
+    <svg width="15" height="15"><use href="#icon-arrow-left"></use></svg>
+    <span>Retour aux dépenses</span>
+  </a>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ nom }}</h1>
+    <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+  </div>
+
+  {# L'onglet "Dépenses" reste actif même sur cette sous-page #}
+  {{ tabs_cagnotte(nom, 'depenses') }}
+
+  <div class="card">
+    <div class="card-title">Modifier la dépense</div>
+
+    {#
+      POST vers edit_depense() (views.py).
+      Pattern PRG : en cas de succès, redirige vers cagnotte_depenses.
+      En cas d'erreur, flash + rechargement de cette page.
+    #}
+    <form method="post"
+          action="{{ url_for('edit_depense', nom=nom, depense_id=depense.id) }}"
+          style="margin-top:.25rem;">
+      <div class="form-grid">
+
+        {# Champ participant avec combobox d'autocomplétion.
+           Initialisée par le bloc <script> en bas de page. #}
+        <div class="field">
+          <label for="editFbParticipant">Participant</label>
+          <div class="combo-wrap">
+            <input name="participant" id="editFbParticipant"
+                   value="{{ depense.participant }}"
+                   autocomplete="off" required maxlength="25">
+            <div class="combo-dropdown" id="editFbDropdown"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="edit-date">Date</label>
+          {# date_input = conversion DD/MM/YYYY → YYYY-MM-DD faite dans views.py (_to_iso_input).
+             Fallback sur today si la dépense n'a pas de date. #}
+          <input id="edit-date" name="date" type="date"
+                 value="{{ date_input if date_input else today }}">
+        </div>
+
+        <div class="field full">
+          <label for="edit-montant">Montant (€)</label>
+          <input id="edit-montant" name="montant" type="number" step="0.01" min="0.01"
+                 value="{{ depense.montant }}" required>
+        </div>
+
+        <div class="field full">
+          <label for="edit-libelle">Libellé
+            <span class="field-optional">(optionnel)</span>
+          </label>
+          <input id="edit-libelle" name="libelle"
+                 value="{{ depense.libelle or '' }}"
+                 placeholder="Ex : Courses Monoprix, AirBnB nuit 1…">
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" type="submit">Enregistrer les modifications</button>
+        <a class="btn btn-ghost"
+           href="{{ url_for('cagnotte_depenses', nom=nom) }}">Annuler</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{#
+  window.PARTICIPANTS est injecté ici (et non dans depenses.html) car
+  cette page charge son propre contexte JS sans depenses.js.
+  initCombobox() est fournie par main.js (déjà chargé via base.html).
+#}
+<script>
+  window.PARTICIPANTS = {{ participants | tojson }};
+  initCombobox('editFbParticipant', 'editFbDropdown', window.PARTICIPANTS);
+</script>
+{% endblock %}

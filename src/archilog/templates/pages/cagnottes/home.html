@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_home %}
+
+{% block title %}Archilog — Cagnottes{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Archilog — Gestion de Cagnottes</h1>
+    <p class="page-subtitle">Créez des cagnottes partagées et suivez les dépenses de chaque participant.</p>
+  </div>
+
+  {# Onglets : "Cagnottes" est l'onglet actif #}
+  {{ tabs_home('cagnottes') }}
+
+  <div class="card">
+    <div class="card-title">
+      {# Compteur de cagnottes via tag pill bleu #}
+      <span>Mes cagnottes</span> <span class="tag tag-blue">{{ cagnottes|length }}</span>
+    </div>
+
+    <div class="section blue">
+      <div class="section-title">Cagnottes existantes</div>
+
+      {% if cagnottes %}
+
+        {#
+          ── Delete action bar ──────────────────────────────────────────────
+          Barre fixe en bas de l'écran, visible uniquement quand au moins
+          une cagnotte est sélectionnée (classe .visible ajoutée par home.js).
+          Les boutons appellent clearSelection() et submitMultiDelete()
+          qui sont exposés sur window par home.js.
+        #}
+        <div class="delete-bar" id="deleteBar">
+          <svg width="14" height="14" aria-hidden="true"><use href="#icon-trash"></use></svg>
+          <span class="delete-bar-text" id="deleteBarText">0 sélectionnée(s)</span>
+          <button type="button" class="btn btn-ghost" onclick="clearSelection()">Annuler</button>
+          <button type="button" class="btn btn-danger-solid" onclick="submitMultiDelete()">
+            <svg width="12" height="12" aria-hidden="true"><use href="#icon-trash-sm"></use></svg>
+            Supprimer
+          </button>
+        </div>
+
+        {#
+          ── Tableau des cagnottes ───────────────────────────────────────────
+          id="cagnottesTable" → référencé par selection.js pour les <tr>.
+          Chaque ligne porte id="row-N" (N = loop.index0) pour que
+          selection.js puisse y ajouter/retirer la classe .selected-row.
+        #}
+        <table class="table" id="cagnottesTable">
+          <thead>
+            <tr>
+              {# Checkbox "tout sélectionner" — le listener est attaché par home.js #}
+              <th class="td-check" scope="col">
+                <label for="checkAll" class="sr-only">Tout sélectionner / désélectionner</label>
+                <input type="checkbox" class="row-checkbox" id="checkAll">
+              </th>
+              <th class="col-nom" scope="col">Nom</th>
+              <th class="col-desc" scope="col">Description</th>
+              {# En-tête vide visuellement mais décrit par .sr-only pour l'accessibilité #}
+              <th class="col-actions" scope="col"><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in cagnottes %}
+            {#
+              data-nom="…" → clé de sélection utilisée par home.js pour construire
+                             la query string de la page confirm-delete-multiple.
+              data-idx="…" → index pour cibler #row-N via selection.js.
+            #}
+            <tr id="row-{{ loop.index0 }}">
+              <td class="td-check">
+                <input type="checkbox" class="row-checkbox cag-check"
+                       data-nom="{{ c.nom }}"
+                       data-idx="{{ loop.index0 }}"
+                       aria-label="Sélectionner la cagnotte « {{ c.nom }} »"
+                       onchange="onRowCheck(this)">
+              </td>
+              <td class="truncate-cell col-nom">
+                <strong>{{ c.nom }}</strong>
+              </td>
+              <td class="truncate-cell col-desc muted">
+                {{ c.description or "—" }}
+              </td>
+              <td class="col-actions" style="text-align:right;">
+                  <div class="actions-group">
+                    <a class="btn btn-ghost"
+                       href="{{ url_for('cagnotte_detail', nom=c.nom) }}">Ouvrir</a>
+                    {# Lien direct vers la page de confirmation (pas de formulaire inline) #}
+                    <a class="btn btn-danger"
+                       href="{{ url_for('confirm_delete', nom=c.nom) }}">Supprimer</a>
+                  </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+      {% else %}
+        {# Empty state : aucune cagnotte → CTA de création #}
+        <p class="empty">Aucune cagnotte pour l'instant.</p>
+        <div class="btn-row" style="margin-top:1rem;">
+          <a class="btn btn-primary" href="{{ url_for('new_cagnotte') }}">
+            <svg width="13" height="13" aria-hidden="true"><use href="#icon-plus"></use></svg>
+            Créer ma première cagnotte
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# selection.js doit être chargé AVANT home.js car home.js appelle
+   window.makeSelectionController() dès l'évaluation du fichier. #}
+<script src="{{ url_for('static', filename='js/selection.js') }}"></script>
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}

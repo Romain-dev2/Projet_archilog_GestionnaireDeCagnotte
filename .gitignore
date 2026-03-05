@@ -1,0 +1,29 @@
+@"
+# Environnement virtuel
+.venv/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Build
+dist/
+*.egg-info/
+
+# IDE
+.idea/
+.vscode/
+
+# Base de données locale
+*.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Variables d'environnement
+.env
+.env.*
+"@ | Set-Content .gitignore

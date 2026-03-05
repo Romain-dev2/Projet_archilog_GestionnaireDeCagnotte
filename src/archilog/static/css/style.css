@@ -1,0 +1,1501 @@
+/* ============================================================
+   Archilog — style.css
+   ============================================================
+   Organisation du fichier (ordre à respecter en cas d'ajout) :
+
+   1.  Variables CSS  (tokens de design : couleurs, rayon, ombre)
+   2.  Reset          (box-sizing, marges, scroll)
+   3.  Focus visible  (navigation clavier, WCAG 2.1 §2.4.7)
+   4.  Layout global  (body, .page wrapper, .page-header)
+   5.  Back link      (bouton de navigation retour)
+   6.  Tab bar        (onglets de navigation)
+   7.  Card           (surface encadrée)
+   8.  Section block  (bloc avec bordure gauche colorée)
+   9.  Table          (tableau de données)
+   10. Stat row       (ligne de métriques)
+   11. Empty state    (.empty)
+   12. Form           (.form-grid, .field, inputs)
+   13. Buttons        (.btn et variantes)
+   14. Tags / badges  (.tag et variantes colorées)
+   15. Misc           (divider, arrow, notice, confirm-delete)
+   16. Checkbox table + delete-bar (sélection multiple)
+   17. Footer, sr-only, responsive, scrollbar
+   18. Nouvelles fonctionnalités (search, done-row, csv-preview, dark-toggle)
+   19. Mode sombre    ([data-theme="dark"] + overrides WCAG)
+   20. Mise à jour    (ctrl-bar-fixed, barres participants, colonnes triables)
+   21. Compteurs, stat-nb-green, part-list-scroll
+   22. Modal édition + combobox
+   23. Toast / snackbar
+   24. Utils          (classes utilitaires sans JS)
+
+   Conventions WCAG AA (rapport de contraste minimum 4.5:1) :
+     Toute couleur modifiée pour conformité est documentée avec le ratio
+     avant/après, ex : "#d97706 = 3.18:1 ✗ → #b45309 = 4.66:1 ✓"
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Inter : texte UI général (labels, boutons, corps de page)
+   JetBrains Mono : montants, dates, code CSV — distingue 0/O, 1/l/I  */
+
+/* ── Variables ──────────────────────────────────────────── */
+:root {
+  /* Surfaces */
+  --bg:         #f1f3f6;   /* fond de page (corps) */
+  --surface:    #ffffff;   /* cartes, modals, inputs focus */
+  --border:     #e3e7ee;   /* bordures génériques */
+  --border-tab: #dde2ea;   /* ligne de fond de la barre d'onglets */
+
+  /* Texte — tous ≥ 4.5:1 sur --bg et --surface */
+  --text:       #111827;   /* titres, données importantes */
+  --text-sub:   #5c6370;   /* labels, métadonnées (assombri de #6b7280 pour WCAG) */
+  --text-body:  #374151;   /* corps de texte standard */
+
+  /* Palette sémantique */
+  --purple:     #7c3aed;   /* accents décoratifs */
+  --blue:       #2563eb;   /* action primaire, liens actifs */
+  --green:      #059669;   /* succès, remboursements effectués */
+  --orange:     #d97706;   /* avertissements */
+  --red:        #dc2626;   /* erreurs, suppressions */
+
+  --tab-active: #2563eb;   /* séparé de --blue pour surcharger en dark mode */
+
+  /* Forme & ombre */
+  --radius:     10px;      /* rayon principal (cards, modals) */
+  --radius-sm:  7px;       /* rayon secondaire (inputs, boutons, tags) */
+  --shadow:     0 1px 3px rgba(0,0,0,.06), 0 6px 24px rgba(0,0,0,.07);
+
+  /* Typographie */
+  --font:       'Inter', system-ui, sans-serif;
+  --mono:       'JetBrains Mono', monospace;
+}
+
+/* ── Reset ──────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html {
+  font-size: 15px;                /* base rem : 1rem = 15px */
+  -webkit-font-smoothing: antialiased;
+  scrollbar-gutter: stable;       /* évite le saut de layout quand la scrollbar apparaît */
+  overflow-y: scroll;             /* scrollbar toujours visible → pas de layout shift */
+}
+
+/* ── Focus visible (navigation clavier) ─────────────────────
+   Stratégie : on retire l'outline navigateur (souvent laid et incohérent)
+   et on le remplace par un anneau bleu uniforme.
+
+   :focus-visible s'active UNIQUEMENT via clavier/Tab, jamais au clic.
+   Cela évite l'anneau visible quand l'utilisateur clique sur un bouton
+   tout en gardant l'indicateur pour les personnes qui naviguent au clavier.
+   Requis par WCAG 2.1 critère 2.4.7 (Focus Visible).                     */
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 0.1562rem solid var(--blue); /* 0.1562rem ≈ 2.34px — valeur em pour zoom */
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, .15);
+}
+
+/* Onglets : l'indicateur est dans la barre (en bas) plutôt qu'autour du lien,
+   cohérent avec le soulignement actif border-bottom du .tab.active */
+.tab:focus-visible {
+  outline: none;
+  box-shadow: inset 0 -3px 0 var(--blue), 0 0 0 3px rgba(37, 99, 235, .15);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+/* Inputs : le focus est déjà signalé par border-color + box-shadow
+   dans la règle .field input:focus — pas besoin d'outline supplémentaire */
+.field input:focus-visible,
+.field textarea:focus-visible,
+.field select:focus-visible { outline: none; }
+
+/* Boutons classiques */
+.btn:focus-visible       { outline-offset: 2px; }
+.back-link:focus-visible { outline-offset: 2px; }
+
+/* Checkboxes : indicateur carré cohérent avec accent-color */
+input[type="checkbox"]:focus-visible,
+.row-checkbox:focus-visible {
+  outline: 0.1562rem solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, .15);
+}
+
+/* Bouton done-toggle (équilibre) */
+.done-toggle:focus-visible {
+  outline: 0.1562rem solid var(--blue);
+  outline-offset: 2px;
+}
+
+/* Bouton fermer modal / toast : espace réduit → offset minimal */
+.modal-close:focus-visible,
+.toast__close:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* Bouton clear recherche (×) */
+.search-clear:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Bouton dark toggle fixe */
+.ctrl-btn:focus-visible {
+  outline: 0.1562rem solid var(--blue);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px rgba(37, 99, 235, .15);
+}
+
+/* ── Body & layout global ────────────────────────────────── */
+body {
+  font-family: var(--font, system-ui), sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.55;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;  /* footer collé en bas via flex: 1 sur .page */
+}
+
+/* ── Page wrapper ───────────────────────────────────────── */
+/* Conteneur centré, max 900px, padding latéral confortable.
+   flex: 1 → pousse le .footer vers le bas même sur les pages courtes. */
+.page {
+  max-width: 900px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 2.5rem 1.5rem 3rem;
+  flex: 1;
+}
+
+/* ── Page header ────────────────────────────────────────── */
+/* En-tête de section : titre principal + sous-titre optionnel */
+.page-header { margin-bottom: 1.75rem; }
+.page-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -.03em;   /* condensé léger pour les grands titres */
+  color: var(--text);
+  line-height: 1.15;
+}
+.page-subtitle {
+  font-size: .88rem;
+  color: var(--text-sub);
+  margin-top: .35rem;
+}
+
+/* ── Back link (vrai bouton bien visible) ───────────────── */
+/* Préféré à un simple lien texte : plus facile à cliquer (zone tactile)
+   et visuellement distinct du contenu de la page. */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--text-body);
+  text-decoration: none;
+  margin-bottom: 1.25rem;
+  padding: .45rem .9rem .45rem .7rem;
+  background: var(--surface);
+  border: 0.0938rem solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  transition: color .15s, border-color .15s, background .15s, box-shadow .15s;
+}
+.back-link:hover {
+  color: var(--blue);
+  border-color: #93c5fd;
+  background: #eff6ff;
+  box-shadow: 0 2px 6px rgba(37,99,235,.1);
+}
+.back-link svg { flex-shrink: 0; }   /* icône ne rétrécit pas sur écrans étroits */
+
+/* ── Tab bar ────────────────────────────────────────────── */
+/* Barre d'onglets horizontale défilante sur mobile.
+   Technique ::after : une ligne grise de fond posée en absolu sur toute
+   la largeur du container, sur laquelle viennent se superposer les onglets
+   (z-index: 1). Cela évite que la ligne dépasse du container contrairement
+   à un border-bottom sur .tabs lui-même. */
+.tabs {
+  display: flex;
+  gap: 0;
+  position: relative;        /* ancre le pseudo-élément ::after */
+  margin-bottom: 1.5rem;
+  overflow-x: auto;          /* scroll horizontal sur petits écrans */
+  scrollbar-width: none;     /* cache la scrollbar Firefox */
+}
+.tabs::-webkit-scrollbar { display: none; }   /* cache la scrollbar Webkit */
+
+/* Ligne grise de fond — reste dans le container (pas de débordement) */
+.tabs::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--border-tab);
+  pointer-events: none;  /* ne capte pas les clics */
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: .42rem;
+  padding: .65rem 1.1rem .6rem;
+  font-size: .84rem;
+  font-weight: 500;
+  color: var(--text-sub);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;  /* espace réservé pour l'indicateur actif */
+  margin-bottom: 0;
+  white-space: nowrap;                   /* empêche le texte de l'onglet de passer à la ligne */
+  cursor: pointer;
+  position: relative;
+  z-index: 1;                /* passe au-dessus du ::after (ligne grise de fond) */
+  transition: color .15s, border-color .15s;
+  user-select: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  color: var(--tab-active);
+  border-bottom-color: var(--tab-active);  /* indicateur bleu "tape" sur la ligne grise */
+  font-weight: 600;
+}
+
+/* Icône SVG dans les onglets : légèrement estompée sauf onglet actif */
+.tab-icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: .5;
+  transition: opacity .15s;
+}
+.tab:hover .tab-icon { opacity: .7; }
+.tab.active .tab-icon { opacity: 1; }
+.tab-icon svg { display: block; }
+
+/* ── Card ───────────────────────────────────────────────── */
+/* Surface blanche avec ombre douce — conteneur principal de contenu.
+   Utiliser .card pour tout bloc de contenu distinct (formulaire, tableau,
+   métriques). Éviter d'imbriquer des .card dans des .card. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.75rem 2rem;
+  margin-bottom: 1.25rem;
+}
+.card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -.015em;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Section block ──────────────────────────────────────── */
+/* Bloc avec accroche colorée à gauche — utilisé dans les cards pour
+   séparer visuellement des sous-parties thématiques.
+   Variantes colorées : .section.purple / .blue / .green / .orange / .red
+   Toutes les couleurs de .section-title respectent WCAG AA sur fond blanc. */
+.section {
+  border-left: 0.2188rem solid var(--blue);
+  padding-left: 1.1rem;
+  margin-bottom: 1.75rem;
+}
+.section:last-child { margin-bottom: 0; }
+.section-title {
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--blue);
+  margin-bottom: .55rem;
+  letter-spacing: -.01em;
+}
+
+.section.purple { border-left-color: var(--purple); }
+.section.purple .section-title { color: var(--purple); }
+.section.blue   { border-left-color: var(--blue); }
+.section.blue   .section-title { color: var(--blue); }
+.section.green  { border-left-color: var(--green); }
+/* --green #059669 sur blanc = 3.76:1 ✗ → #047857 = 4.52:1 ✓ */
+.section.green  .section-title { color: #047857; }
+.section.orange { border-left-color: var(--orange); }
+/* --orange #d97706 sur blanc = 3.18:1 ✗ → #b45309 = 4.66:1 ✓ */
+.section.orange .section-title { color: #b45309; }
+.section.red    { border-left-color: var(--red); }
+.section.red    .section-title { color: var(--red); }
+
+.section p, .section .body-line {
+  font-size: .875rem;
+  color: var(--text-body);
+  line-height: 1.65;
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+/* Tableau de données dense. Les en-têtes sont en majuscules + espacement
+   lettre pour les distinguer des données sans utiliser de fond coloré
+   (plus léger visuellement). */
+.table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+.table thead th {
+  text-align: left;
+  font-size: .75rem;           /* 12px min pour passer WAVE "very small text" */
+  font-weight: 600;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  padding: .55rem .6rem;
+  border-bottom: 1px solid var(--border);
+}
+.table tbody tr { transition: background .1s; }
+.table tbody tr:hover { background: #f7f9fc; }
+.table tbody td {
+  padding: .65rem .6rem;
+  color: var(--text-body);
+  border-bottom: 1px solid #f0f2f6;
+  vertical-align: middle;
+  font-size: .875rem;
+}
+.table tbody tr:last-child td { border-bottom: none; }
+.table td strong { color: var(--text); font-weight: 600; }
+/* .mono : montants et dates — la police monospace aligne les chiffres colonne par colonne */
+.table td.mono { font-family: var(--mono, ui-monospace), monospace; font-size: .82rem; font-weight: 500; }
+.table td.muted { color: var(--text-sub); }
+
+/* Colonnes et troncature dans la table home */
+.col-nom    { width: 22%; }
+.col-desc   { width: 46%; }
+.col-action { width: 16%; }
+
+/* .truncate-cell : astuce pour que overflow:hidden fonctionne dans une
+   cellule de tableau avec width en %.
+   max-width:0 ne signifie pas "largeur nulle" : avec table-layout:auto
+   la colonne prend quand même sa largeur normale, mais l'overflow devient
+   calculable par le navigateur.                                           */
+.truncate-cell {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Stat row ────────────────────────────────────────────── */
+/* Ligne de métriques clés (total, part, nb participants…).
+   Les valeurs en police monospace facilitent la lecture des chiffres. */
+.stat-row { display: flex; flex-wrap: wrap; gap: 1.25rem; margin-bottom: .5rem; }
+.stat { display: flex; flex-direction: column; gap: .15rem; }
+.stat-label {
+  font-size: .75rem; font-weight: 600;
+  letter-spacing: .05em; text-transform: uppercase; color: var(--text-sub);
+}
+.stat-value { font-family: var(--mono, ui-monospace), monospace; font-size: 1.15rem; font-weight: 500; color: var(--text); }
+
+/* ── Empty state ─────────────────────────────────────────── */
+/* Texte affiché quand une liste est vide (ex : "Aucune dépense"). */
+.empty { font-size: .85rem; color: var(--text-sub); font-style: italic; }
+
+/* ── Form ───────────────────────────────────────────────── */
+/* Grille 2 colonnes par défaut, 1 colonne sur mobile.
+   .full : classe à ajouter sur le champ qui doit prendre toute la largeur
+   (ex : champ "libellé" ou "description"). */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .85rem; }
+.form-grid .full { grid-column: 1 / -1; }
+@media (max-width: 560px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-grid .full { grid-column: 1; }
+}
+
+.field { display: flex; flex-direction: column; gap: .3rem; }
+.field label { font-size: .78rem; font-weight: 600; letter-spacing: .03em; color: var(--text-sub); }
+.field input, .field textarea, .field select {
+  font-family: var(--font, system-ui), sans-serif; font-size: .875rem; color: var(--text);
+  background: var(--bg); border: 0.0938rem solid var(--border);
+  border-radius: var(--radius-sm); padding: .52rem .8rem;
+  outline: none; width: 100%;
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+/* Focus input : fond blanc + anneau bleu transparent — sans outline (géré par :focus-visible) */
+.field input:focus, .field textarea:focus {
+  border-color: var(--blue); background: #fff;
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+.field input::placeholder, .field textarea::placeholder { color: #b0b8c8; }
+.field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+
+/* ── Buttons ─────────────────────────────────────────────── */
+.btn-row { display: flex; gap: .6rem; flex-wrap: wrap; margin-top: .25rem; }
+
+/* Base commune à tous les boutons :
+   inline-flex pour aligner l'icône SVG + le texte avec gap.
+   transform scale(.97) au clic = retour haptique visuel. */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: .4rem;
+  font-family: var(--font, system-ui), sans-serif; font-size: .82rem; font-weight: 600;
+  padding: .5rem 1.1rem; border-radius: var(--radius-sm);
+  border: 0.0938rem solid transparent; cursor: pointer; text-decoration: none;
+  white-space: nowrap; line-height: 1; user-select: none;
+  transition: background .13s, border-color .13s, box-shadow .13s, transform .09s;
+}
+.btn:active { transform: scale(.97); }
+
+/* Primaire : action principale de la page (ex : "Ajouter", "Enregistrer") */
+.btn-primary { background: var(--blue); color: #fff; border-color: var(--blue); box-shadow: 0 1px 4px rgba(37,99,235,.3); }
+.btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+/* Ghost : action secondaire ou neutre (ex : "Annuler") */
+.btn-ghost { background: #fff; color: var(--text-sub); border-color: var(--border); }
+.btn-ghost:hover { background: var(--bg); color: var(--text); border-color: #c5cdd9; }
+
+/* Danger outline : action destructrice avec confirmation (ex : bouton dans la delete-bar) */
+.btn-danger { background: #fff; color: var(--red); border-color: #fca5a5; }
+.btn-danger:hover { background: #fef2f2; border-color: var(--red); }
+
+/* Danger solid : action destructrice directe (ex : confirmation finale de suppression) */
+.btn-danger-solid { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-danger-solid:hover { background: #b91c1c; border-color: #b91c1c; }
+
+/* ── Badge / tag ─────────────────────────────────────────── */
+/* Pilule colorée pour catégories, statuts.
+   border-radius:99px = pill parfaite quel que soit le contenu. */
+.tag { display: inline-block; font-size: .75rem; font-weight: 600; letter-spacing: .05em; padding: .2rem .55rem; border-radius: 99px; border: 1px solid; }
+/* Les couleurs de texte des tags respectent toutes WCAG AA sur leurs fonds respectifs */
+.tag-blue   { background: #eff6ff; color: var(--blue);   border-color: #bfdbfe; }
+.tag-green  { background: #ecfdf5; color: var(--green);  border-color: #a7f3d0; }
+.tag-orange { background: #fffbeb; color: var(--orange); border-color: #fde68a; }
+.tag-purple { background: #f5f3ff; color: var(--purple); border-color: #ddd6fe; }
+.tag-red    { background: #fef2f2; color: var(--red);    border-color: #fecaca; }
+
+/* ── Divider ─────────────────────────────────────────────── */
+/* Séparateur horizontal léger entre deux sections d'une card. */
+.divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+/* ── Arrow ───────────────────────────────────────────────── */
+/* Flèche "→" entre débiteur et créditeur dans la page équilibre et la CLI. */
+.arrow { color: var(--text-sub); font-weight: 400; }
+
+/* ── Notice ──────────────────────────────────────────────── */
+/* Bloc d'information contextuelle (avertissement non-bloquant).
+   Fond jaune pâle + bordure orange — utilisé ex. pour expliquer le format CSV. */
+.notice {
+  display: flex; align-items: flex-start; gap: .6rem;
+  background: #fffbeb; border: 1px solid #fde68a;
+  border-left: 0.2188rem solid var(--orange);
+  border-radius: var(--radius-sm); padding: .75rem 1rem;
+  font-size: .82rem; color: #92400e; margin-top: 1rem;
+}
+
+/* ── Confirm delete ──────────────────────────────────────── */
+/* Card de confirmation de suppression (confirm_delete.html).
+   Fond rosé pour matérialiser le danger sans être agressif. */
+.danger-card { background: #fff8f8; border: 1px solid #fecaca; border-radius: var(--radius); padding: 2rem; max-width: 480px; }
+.danger-icon { font-size: 2.2rem; margin-bottom: .75rem; }      /* emoji/icône décoratif */
+.danger-title { font-size: 1.1rem; font-weight: 700; color: var(--red); margin-bottom: .5rem; }
+.danger-desc { font-size: .875rem; color: var(--text-body); margin-bottom: 1.5rem; line-height: 1.6; }
+
+/* ── Checkbox table ──────────────────────────────────────── */
+/* Colonne de sélection multiple — largeur fixe, centrée, sans padding droit
+   pour ne pas créer d'espace visuel entre la checkbox et la première donnée. */
+.table td.td-check,
+.table th.td-check {
+  width: 2.2rem;
+  padding-right: 0;
+  text-align: center;
+}
+/* accent-color : colorie la checkbox avec la couleur de la marque (Chrome/FF/Safari) */
+.row-checkbox {
+  width: 15px; height: 15px;
+  cursor: pointer;
+  accent-color: var(--blue);
+}
+/* Ligne sélectionnée : fond bleu pâle pour différencier des lignes hover */
+.table tbody tr.selected-row { background: #eff6ff; }
+.table tbody tr.selected-row:hover { background: #dbeafe; }
+
+/* ── Delete action bar (fixe en bas, pas de layout shift) ── */
+/* Barre sombre fixée en bas de l'écran, visible uniquement quand au moins
+   une ligne est cochée (.visible ajouté par home.js / depenses.js).
+   Positionnée par left:50% + translateX(-50%) pour rester centrée à 860px max
+   sans dépendre du width de la page (qui peut avoir du padding).
+   L'animation slideUp prévient les apparitions brusques. */
+.delete-bar {
+  display: none;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1.25rem;
+  background: #1e293b;             /* fond sombre "slate-800" */
+  border-top: 2px solid var(--red);
+  border-radius: var(--radius) var(--radius) 0 0;
+  font-size: .82rem;
+  color: #f8fafc;
+  font-weight: 600;
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(860px, 100%);         /* max 860px, 100% sur mobile */
+  z-index: 100;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.18);
+  animation: slideUp .15s ease;
+}
+/* slideUp : entrée depuis le bas — le translateX(-50%) est maintenu pour rester centré */
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(100%); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+.delete-bar.visible { display: flex; }
+/* flex: 1 → le texte "N éléments sélectionnés" prend tout l'espace disponible */
+.delete-bar-text { flex: 1; }
+
+/* Boutons dans la barre sombre — couleurs adaptées au fond #1e293b */
+.delete-bar .btn-ghost {
+  background: transparent;
+  color: #94a3b8;         /* slate-400 — lecture confortable sur fond sombre */
+  border-color: #334155;
+}
+.delete-bar .btn-ghost:hover {
+  background: #334155;
+  color: #f8fafc;
+  border-color: #475569;
+}
+.delete-bar .btn-danger-solid {
+  background: var(--red);
+  border-color: var(--red);
+}
+
+/* Bouton succès : état positif (ex : toggled "effectué") */
+.btn-success { background: #ecfdf5; color: #065f46; border-color: #6ee7b7; }
+.btn-success:hover { background: #d1fae5; border-color: var(--green); }
+
+/* ── Footer ──────────────────────────────────────────────── */
+/* Note: surchargé plus bas par ".footer { display: block }" pour annuler
+   l'ancienne version flex et laisser la place au dark-toggle inline. */
+.footer {
+  text-align: center;
+  padding: 1.25rem 1.5rem;
+  font-size: .75rem;
+  color: var(--text-sub);
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+}
+.footer strong { color: var(--text-body); font-weight: 600; }
+
+/* ── Texte "(optionnel)" dans les labels de formulaire ───── */
+/* Remplace le style inline color:#b0b8c8 (rapport 1.99:1 insuffisant WCAG).
+   --text-sub donne 4.5:1 sur --bg en light et 5.82:1 en dark. */
+.field-optional {
+  font-weight: 400;
+  color: var(--text-sub);
+}
+
+/* ── Utilitaire accessibilité : texte visible uniquement par les lecteurs d'écran ── */
+/* Implémentation standard du "clip pattern" (W3C / Bootstrap / Tailwind).
+   Utilisé pour les labels de colonnes de tri, les actions icônes-seulement, etc.
+   Ne pas utiliser display:none ni visibility:hidden qui masquent aussi aux AT. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+/* Ajustements pour écrans < 640px : réduction des paddings et taille de titre */
+@media (max-width: 640px) {
+  .page { padding: 1.5rem 1rem 2rem; }
+  .page-title { font-size: 1.4rem; }
+  .card { padding: 1.25rem; }
+}
+
+/* ── Scrollbar ───────────────────────────────────────────── */
+/* Scrollbar fine et discrète (Webkit). scrollbar-width:thin couvre Firefox.
+   La scrollbar principale est définie plus haut (overflow-y:scroll sur html). */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #c5cdd9; }
+
+/* ════════════════════════════════════════════════════════════
+   NOUVELLES FONCTIONNALITÉS
+   Ajouts successifs — regroupés ici pour éviter de polluer les
+   sections de base ci-dessus.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Tags catégories supplémentaires ──────────────────────── */
+/* Complète les 5 couleurs de base avec teal (transport, neutre positif)
+   et gray (non catégorisé, divers). */
+.tag-teal { background: #f0fdfa; color: #0f766e; border-color: #99f6e4; }
+.tag-gray { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+
+/* ── Search bar ──────────────────────────────────────────── */
+/* Barre de recherche du tableau des dépenses (depenses.html).
+   Le conteneur .search-bar reçoit le focus-within (outline bleu)
+   car l'input intérieur a outline:none pour éviter le double focus.
+   .search-clear (bouton ×) est hidden par défaut, visible via JS
+   quand l'input contient du texte. */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--bg);
+  border: 0.0938rem solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .4rem .75rem;
+  margin-bottom: .9rem;
+  transition: border-color .15s;
+}
+/* :focus-within : le conteneur prend la couleur focus dès que l'input est actif */
+.search-bar:focus-within { border-color: var(--blue); }
+.search-bar svg { flex-shrink: 0; color: var(--text-sub); }
+.search-bar input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-family: var(--font, system-ui), sans-serif;
+  font-size: .84rem;
+  color: var(--text);
+  outline: none;
+}
+.search-bar input::placeholder { color: #b0b8c8; }
+.search-clear {
+  background: none; border: none; cursor: pointer;
+  color: var(--text-sub); font-size: .8rem; padding: 0 .1rem;
+  line-height: 1;
+  transition: color .15s;
+}
+.search-clear:hover { color: var(--red); }
+
+/* ── Remboursements effectués ────────────────────────────── */
+/* opacity: .45 retiré — réduisait le contraste à 2.34:1 light / 4.05:1 dark ✗.
+   On utilise --text-sub qui donne 5.42:1 light ✓ et 5.82:1 dark ✓.
+   text-decoration:line-through indique l'état "fait" sans masquer l'info. */
+.done-row td { color: var(--text-sub); text-decoration: line-through; }
+/* Override .table td strong { color: var(--text) } pour les cellules strong des lignes done */
+.done-row td strong { color: var(--text-sub); }
+/* done-toggle--on : bouton coché → fond vert plein */
+.done-row .done-toggle--on { background: var(--green); border-color: var(--green); color: #fff; }
+
+/* Bouton circulaire de toggle remboursement (colonne "effectué" de la page équilibre).
+   Visuellement : cercle gris → cercle vert au clic (JS ajoute .done-toggle--on). */
+.done-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--surface); border: 0.0938rem solid var(--border);
+  cursor: pointer; color: var(--text-sub);
+  transition: background .13s, border-color .13s, color .13s;
+}
+.done-toggle:hover { background: #ecfdf5; border-color: var(--green); color: var(--green); }
+
+/* ── CSV preview ─────────────────────────────────────────── */
+/* Bloc exemple de format CSV dans import_csv.html.
+   white-space:pre conserve l'indentation du CSV exemple.
+   overflow-x:auto permet le scroll horizontal si l'exemple est large. */
+.csv-preview {
+  font-family: var(--mono, ui-monospace), monospace;
+  font-size: .75rem;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .65rem 1rem;
+  margin-top: .65rem;
+  white-space: pre;
+  overflow-x: auto;
+  color: var(--text-body);
+}
+
+/* ── Dark mode toggle (footer) ───────────────────────────── */
+/* Ancienne version : bouton dans le footer.
+   Remplacé par .ctrl-bar-fixed (bouton fixe circulaire en haut à droite).
+   Ce style est conservé pour rétrocompatibilité si le footer le référence encore. */
+.footer { display: flex; align-items: center; justify-content: space-between; }
+.dark-toggle {
+  background: none; border: 0.0938rem solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: .25rem .55rem;
+  cursor: pointer; font-size: .85rem; line-height: 1;
+  transition: border-color .15s, background .15s;
+  color: var(--text-sub);
+}
+.dark-toggle:hover { background: var(--bg); border-color: #c5cdd9; }
+
+/* ════════════════════════════════════════════════════════════
+   MODE SOMBRE — [data-theme="dark"]
+   L'attribut data-theme est posé sur <html> par le script anti-flash
+   inline de base.html AVANT le premier rendu (évite le flash blanc).
+   Toutes les surcharges sont regroupées ici pour faciliter la maintenance.
+   ════════════════════════════════════════════════════════════ */
+[data-theme="dark"] {
+  --bg:         #0f172a;   /* slate-950 */
+  --surface:    #1e293b;   /* slate-800 */
+  --border:     #334155;   /* slate-700 */
+  --border-tab: #334155;
+
+  --text:       #f1f5f9;   /* slate-100 */
+  --text-sub:   #94a3b8;   /* slate-400 — 5.82:1 sur surface ✓ */
+  --text-body:  #cbd5e1;   /* slate-300 */
+
+  /* --tab-active séparé de --blue pour éviter le problème de contraste :
+     --blue #3b82f6 sur --surface #1e293b = 3.97:1 ✗ → #60a5fa = 5.79:1 ✓ */
+  --tab-active: #60a5fa;
+  --blue:       #3b82f6;
+  --green:      #34d399;   /* emerald-400 — plus lumineux qu'en light */
+  --orange:     #fbbf24;   /* amber-400 */
+  --red:        #f87171;   /* red-400 */
+  --purple:     #a78bfa;   /* violet-400 */
+
+  --shadow: 0 1px 3px rgba(0,0,0,.3), 0 6px 24px rgba(0,0,0,.4);
+}
+
+/* Surcharges spécifiques dark — composant par composant */
+[data-theme="dark"] .back-link { background: var(--surface); }
+[data-theme="dark"] .back-link:hover { background: #1e3a5f; }
+
+/* Inputs dark : fond plus sombre que la surface pour créer un creux visuel */
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .field select { background: #0f172a; color: var(--text); }
+[data-theme="dark"] .field input:focus,
+[data-theme="dark"] .field textarea:focus { background: #1e293b; }
+
+[data-theme="dark"] .table tbody tr:hover { background: #263445; }
+[data-theme="dark"] .table tbody tr.selected-row { background: #1e3a5f; }
+[data-theme="dark"] .btn-ghost { background: var(--surface); color: var(--text-sub); }
+[data-theme="dark"] .btn-ghost:hover { background: #334155; color: var(--text); }
+[data-theme="dark"] .btn-danger { background: var(--surface); }
+[data-theme="dark"] .csv-preview { background: #0f172a; }
+[data-theme="dark"] .search-bar { background: #0f172a; }
+[data-theme="dark"] .search-bar input { color: var(--text); }
+
+/* Tags dark : fonds sombres correspondant à chaque teinte */
+[data-theme="dark"] .tag-teal  { background: #0f2e2b; color: #5eead4; border-color: #134e4a; }
+[data-theme="dark"] .tag-gray  { background: #1e293b; color: #94a3b8; border-color: #334155; }
+[data-theme="dark"] .tag-blue  { background: #1e3a5f; color: #93c5fd; border-color: #1d4ed8; }
+[data-theme="dark"] .tag-green { background: #052e16; color: #6ee7b7; border-color: #065f46; }
+[data-theme="dark"] .tag-orange{ background: #2d1a00; color: #fcd34d; border-color: #92400e; }
+[data-theme="dark"] .tag-purple{ background: #2e1065; color: #c4b5fd; border-color: #4c1d95; }
+[data-theme="dark"] .done-toggle { background: var(--surface); }
+
+/* ── Dark mode : corrections de contraste WCAG AA ───────────
+   Chaque correction documente le ratio avant et après changement.       */
+
+/* .section.blue .section-title : --blue #3b82f6 sur --surface #1e293b = 3.97:1 ✗
+   → on utilise --tab-active #60a5fa qui donne 5.79:1 ✓                           */
+[data-theme="dark"] .section-title               { color: var(--tab-active); }
+[data-theme="dark"] .section.blue                { border-left-color: var(--tab-active); }
+[data-theme="dark"] .section.blue .section-title { color: var(--tab-active); }
+/* Les autres couleurs dark (purple, green, orange, red) passent déjà ≥ 4.5:1.    */
+
+/* .btn-primary : texte #fff sur --blue #3b82f6 = 3.67:1 ✗ → #2563eb = 6.18:1 ✓ */
+[data-theme="dark"] .btn-primary       { background: #2563eb; border-color: #2563eb; }
+[data-theme="dark"] .btn-primary:hover { background: #1d4ed8; border-color: #1d4ed8; }
+
+/* .btn-danger-solid : #fff sur --red #f87171 = 2.76:1 ✗ → #b91c1c = 5.02:1 ✓   */
+[data-theme="dark"] .btn-danger-solid       { background: #b91c1c; border-color: #b91c1c; }
+[data-theme="dark"] .btn-danger-solid:hover { background: #991b1b; border-color: #991b1b; }
+
+/* .dark-toggle-fixed : ancienne classe remplacée par .ctrl-bar-fixed / .ctrl-btn */
+[data-theme="dark"] .ctrl-btn { color: var(--text); }
+[data-theme="dark"] .ctrl-bar-fixed { box-shadow: 0 2px 8px rgba(0,0,0,.4); }
+
+/* .muted sur .selected-row (#1e3a5f) : --text-sub #94a3b8 = 4.48:1 ✗
+   Légèrement éclairci à #a8b4c4 pour dépasser 4.5:1 dans ce contexte.            */
+[data-theme="dark"] .table tbody tr.selected-row td.muted { color: #a8b4c4; }
+
+/* section.orange dark : #b45309 sur --surface #1e293b = 2.91:1 ✗
+   → utilise --orange #fbbf24 = 8.3:1 ✓                                           */
+[data-theme="dark"] .section.orange .section-title { color: var(--orange); }
+[data-theme="dark"] .section.orange { border-left-color: var(--orange); }
+
+/* section.green dark : #047857 sur --surface #1e293b = insuffisant
+   → utilise --green #34d399 = 9.2:1 ✓                                            */
+[data-theme="dark"] .section.green .section-title { color: var(--green); }
+[data-theme="dark"] .section.green { border-left-color: var(--green); }
+
+/* ════════════════════════════════════════════════════════════
+   MISE À JOUR — dark toggle fixe, barres participant, colonnes triables
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Bouton dark mode fixe (cercle, coin supérieur droit) ── */
+/* Repositionné hors du footer pour être accessible sur toutes les pages
+   sans descendre en bas. Cercle 40×40px, z-index 200 (au-dessus des cards,
+   en dessous des modals à z-index 300). */
+.ctrl-bar-fixed {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: var(--surface);
+  border: 0.0938rem solid var(--border);
+  border-radius: 50%;
+  box-shadow: 0 2px 10px rgba(0,0,0,.14);
+  transition: border-color .15s, box-shadow .15s;
+}
+.ctrl-bar-fixed:hover {
+  box-shadow: 0 4px 18px rgba(37,99,235,.22);
+}
+
+/* .ctrl-btn : bouton intérieur au cercle — prend toute la surface cliquable */
+.ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.1rem;   /* emoji ☀️/🌙 */
+  color: var(--text);
+  border-radius: 50%;
+  transition: background .13s, transform .1s;
+  line-height: 1;
+}
+.ctrl-btn:hover {
+  background: var(--bg);
+  transform: scale(1.1);   /* légère mise en avant au survol */
+}
+.ctrl-btn:active { transform: scale(.93); }
+.ctrl-sep { display: none; }   /* séparateur d'ancienne version — masqué */
+
+/* Rétrocompat : ancienne classe dark-toggle-fixed — masquée car remplacée */
+.dark-toggle-fixed { display: none; }
+
+/* Dark mode dark-toggle */
+[data-theme="dark"] .ctrl-btn        { color: var(--text); }
+[data-theme="dark"] .ctrl-bar-fixed  { box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+[data-theme="dark"] .ctrl-bar-fixed:hover { box-shadow: 0 4px 18px rgba(99,179,237,.3); }
+
+
+/* ── Barres de répartition participants ──────────────────── */
+/* Visualisation de la part de chaque participant dans l'onglet Vue d'ensemble.
+   La largeur de .part-bar-fill est inlinée en % (calculée côté serveur
+   dans cagnotte.html) car CSS ne peut pas interpoler des valeurs dynamiques
+   sans variables CSS ou JS. */
+.part-bar-row {
+  margin-bottom: .75rem;
+}
+.part-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: .3rem;
+}
+.part-bar-name {
+  font-size: .84rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.part-bar-meta {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+/* Pourcentage aligné à droite — min-width évite le saut de layout quand
+   la valeur passe de 1 chiffre à 2 */
+.part-bar-pct {
+  font-size: .75rem;
+  font-weight: 700;
+  color: var(--text-sub);
+  min-width: 3rem;
+  text-align: right;
+}
+/* Track : fond gris de la barre (100% de la largeur) */
+.part-bar-track {
+  height: 7px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;   /* clip le fill qui dépasse si width > 100% (sécurité) */
+}
+/* Fill : largeur = pourcentage de participation, couleur inline (palette cyclique dans le template) */
+.part-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  transition: width .4s ease;  /* animation au chargement de la page */
+}
+
+
+/* ── En-tête de colonne triable ──────────────────────────── */
+/* Les <th> cliquables (montant, date) reçoivent .th-sort + data-col.
+   depenses.js écoute le click et ajoute .th-sort--active + met à jour #sort-*.
+   tabindex="0" est posé dans le HTML pour permettre la navigation clavier. */
+.th-sort {
+  cursor: pointer;
+  user-select: none;  /* évite la sélection de texte au double-clic */
+  white-space: nowrap;
+}
+.th-sort:hover { color: var(--blue); }
+.th-sort--active { color: var(--blue); }
+/* .sort-icon (▲/▼) : opacity:.5 retiré — contraste insuffisant (2.15:1 light, 2.51:1 dark).
+   On utilise --text-sub (#5c6370 light = 5.42:1 ✓) à opacité pleine.          */
+.sort-icon {
+  font-size: .75rem;
+  color: var(--text-sub);
+  margin-left: .2rem;
+}
+.th-sort--active .sort-icon { color: var(--blue); }
+
+/* ── Correction ancienne règle .footer flex ──────────────── */
+/* L'ancienne version ajoutait display:flex au footer pour placer le toggle dedans.
+   Avec le toggle fixe hors du footer, on revient à display:block + text-align:center. */
+.footer {
+  display: block;
+  text-align: center;
+}
+
+/* ── Dark mode: btn-success ─────────────────────────────── */
+/* Sur fond dark #1e293b : vert clair #ecfdf5 trop lumineux → fond sombre #064e3b */
+[data-theme="dark"] .btn-success {
+  background: #064e3b;
+  color: #6ee7b7;
+  border-color: #065f46;
+}
+[data-theme="dark"] .btn-success:hover {
+  background: #065f46;
+  border-color: #34d399;
+  color: #a7f3d0;
+}
+
+/* ── Dark mode: spinners natifs input number + date ──────── */
+/* color-scheme:dark demande au navigateur d'afficher ses contrôles
+   natifs (spinner incrémental, date picker) avec un thème sombre.
+   Sans cela, le fond sombre + contrôle blanc natif crée un artefact. */
+[data-theme="dark"] input[type="number"] {
+  color-scheme: dark;
+}
+[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}
+
+/* ── Badge pill bleu pour les totaux ────────────────────── */
+/* Utilisé dans les en-têtes de section pour afficher un compteur
+   (ex : "Dépenses <badge>12</badge>"). Distinct de .tag : police mono,
+   usage purement numérique. */
+.count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+  font-weight: 600;
+  font-family: var(--mono, ui-monospace), monospace;
+  color: var(--blue);
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 99px;
+  padding: .15rem .55rem;
+  vertical-align: middle;
+  margin-left: .5rem;
+  line-height: 1.4;
+}
+[data-theme="dark"] .count-badge {
+  background: #1e3a5f;
+  border-color: #1d4ed8;
+  color: #93c5fd;
+}
+
+
+/* ── #cptEffectues (compteur remboursements) ─────────────── */
+/* var(--green) = #059669 sur blanc = 3.76:1 ✗
+   Classe dédiée avec une teinte assez foncée en light et claire en dark. */
+.stat-nb-green { color: #047857; }                              /* 4.52:1 sur blanc ✓ */
+[data-theme="dark"] .stat-nb-green { color: var(--green); }    /* #34d399 = 9.2:1 ✓  */
+
+
+/* ── Liste participants avec défilement (combobox + page ajouter) ── */
+/* Limite la hauteur de la liste d'autocomplétion à 200px avant scroll.
+   Scrollbar fine (4px) pour ne pas empiéter sur le contenu du dropdown. */
+.part-list-scroll {
+  max-height: 200px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: .4rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.part-list-scroll::-webkit-scrollbar { width: 4px; }
+.part-list-scroll::-webkit-scrollbar-track { background: transparent; }
+.part-list-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+/* Troncature du nom pour les participants longs — max-width explicite requis */
+.part-list-scroll .part-bar-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 260px;
+}
+
+/* ── Dark mode: done-toggle--on (remboursement effectué) ──── */
+/* !important nécessaire pour surcharger .done-row .done-toggle--on
+   qui est déjà déclaré plus tôt sans préfixe dark. */
+[data-theme="dark"] .done-toggle--on {
+  background: #065f46 !important;
+  border-color: #34d399 !important;
+  color: #6ee7b7 !important;
+  box-shadow: 0 0 0 2px rgba(52, 211, 153, .2);  /* halo vert pour renforcer la visibilité */
+}
+[data-theme="dark"] .done-row td {
+  /* opacity: .55 → même problème de contraste. color: var(--text-sub) = #94a3b8 = 5.82:1 ✓ */
+  color: var(--text-sub);
+}
+
+/* ── Input date : color-scheme cohérent ──────────────────── */
+/* color-scheme:light en mode clair garantit que le date picker
+   du navigateur utilise un thème clair même si l'OS est en mode sombre.
+   La règle dark est déjà déclarée plus haut. */
+input[type="date"] {
+  color-scheme: light;
+}
+[data-theme="dark"] input[type="date"] {
+  color-scheme: dark;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MODAL ÉDITION + CUSTOM COMBOBOX
+   Deux fonctionnalités visuellement distinctes mais co-dépendantes :
+   le combobox est initialisé après l'ouverture de la modal.
+   ════════════════════════════════════════════════════════════ */
+
+/* ── Modal overlay ───────────────────────────────────────── */
+/* Fond semi-transparent + flou derrière la modal.
+   display:none par défaut → display:flex quand .open est ajouté par JS.
+   On utilise flex pour centrer .modal-box horizontalement et verticalement.
+   z-index 300 > delete-bar (100) et ctrl-bar-fixed (200). */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;                          /* couvre tout le viewport */
+  background: rgba(0, 0, 0, .5);
+  backdrop-filter: blur(3px);        /* flou arrière-plan (non supporté IE) */
+  z-index: 300;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+
+/* ── Modal box ───────────────────────────────────────────── */
+/* Boîte de dialogue elle-même.
+   max-width:520px — largeur confortable pour un formulaire 2 colonnes.
+   L'animation modalIn crée une entrée de scale(.95) → scale(1) + légère
+   translation verticale, plus douce qu'un simple fade. */
+.modal-box {
+  background: var(--surface);
+  border: 0.0938rem solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0,0,0,.3);  /* ombre plus profonde que les cards */
+  width: 100%;
+  max-width: 520px;
+  padding: 1.5rem;
+  animation: modalIn .18s ease;
+}
+@keyframes modalIn {
+  from { transform: scale(.95) translateY(-10px); opacity: 0; }
+  to   { transform: scale(1)   translateY(0);     opacity: 1; }
+}
+
+/* En-tête de la modal : titre + bouton de fermeture */
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+.modal-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+}
+/* Bouton "×" de fermeture — icône seulement (aria-label dans le HTML) */
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-sub);
+  padding: .2rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  transition: color .12s, background .12s;
+}
+.modal-close:hover { color: var(--red); background: #fee2e2; }
+
+/* Zone d'erreur AJAX dans la modal (ex : montant invalide lors du /update) */
+.modal-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-sm);
+  color: var(--red);
+  font-size: .82rem;
+  padding: .5rem .75rem;
+  margin-top: .5rem;
+}
+[data-theme="dark"] .modal-error {
+  background: #3b0a0a;
+  border-color: #7f1d1d;
+}
+
+/* ── Flash de sauvegarde sur la ligne AJAX modifiée ────────── */
+/* Après un update AJAX réussi, la ligne du tableau reçoit .row-saved.
+   L'animation passe la ligne au vert 1.2s puis revient à transparent.
+   En dark mode : pas d'animation (problème de contraste sur fond sombre)
+   → fond vert sombre statique. */
+@keyframes savedFlash {
+  0%   { background: #dcfce7; }
+  80%  { background: #dcfce7; }
+  100% { background: transparent; }
+}
+.row-saved { animation: savedFlash 1.2s ease forwards; }
+[data-theme="dark"] .row-saved {
+  animation: none;
+  background: #052e16 !important;   /* vert très sombre, statique */
+}
+
+/* ── Custom combobox ─────────────────────────────────────── */
+/* Champ de saisie avec dropdown d'autocomplétion personnalisé (participant).
+   Pourquoi ne pas utiliser <datalist> natif :
+     - Style non contrôlable (varie fortement entre navigateurs)
+     - Impossible de styliser les items individuellement
+     - Comportement de filtre non garanti
+   Le combobox JS (main.js > initCombobox) gère :
+     - Filtrage par substring insensible à la casse
+     - Sélection souris (mousedown) et clavier (Enter/flèches)
+     - Fermeture au blur (délai mousedown → évite fermeture prématurée)
+
+   .combo-dropdown est display:none par défaut, JS ajoute display:block. */
+.combo-wrap {
+  position: relative;  /* ancre le dropdown en absolu */
+}
+.combo-wrap input {
+  width: 100%;
+}
+.combo-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);   /* 4px de séparation avec l'input */
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 0.0938rem solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,.15);
+  z-index: 400;            /* au-dessus de la modal (300) */
+  max-height: 220px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.combo-item {
+  padding: .55rem .85rem;
+  font-size: .84rem;
+  cursor: pointer;
+  color: var(--text);
+  transition: background .1s;
+}
+.combo-item:hover,
+.combo-item:focus {
+  background: var(--bg);
+  color: var(--blue);
+}
+[data-theme="dark"] .combo-item:hover {
+  background: #1e3a5f;
+  color: #93c5fd;
+}
+
+/* ============================================================
+   Toast / Snackbar
+   Notification temporaire positionnée en bas de l'écran.
+
+   Architecture :
+     #toast (.toast)                — conteneur unique, toujours dans le DOM
+     .toast__icon                   — cercle coloré avec icône
+     .toast__msg                    — texte du message
+     .toast__close                  — bouton × (fermeture manuelle)
+
+   États :
+     .toast (par défaut)            — hors écran (translateY(+hauteur)) + opacity:0
+     .toast.toast--visible          — visible + centré au-dessus du bas
+
+   Types (ajoutés/retirés dynamiquement par showToast()) :
+     .toast--success / --error / --info / --warning
+
+   Cycles de vie :
+     showToast(msg, type) → ajoute les classes → setTimeout retire --visible
+     Le bouton × retire immédiatement --visible
+   ============================================================ */
+
+/* ── Conteneur ───────────────────────────────────────────── */
+/* L'état par défaut est "caché" : translateY pousse le toast sous la zone
+   visible. On garde pointer-events:none pour ne pas bloquer les clics en
+   dessous. z-index:500 — au-dessus de tout (modal 300, ctrl-bar 200). */
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(calc(100% + 2rem));   /* hors écran */
+
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-width: 260px;
+  max-width: min(520px, calc(100vw - 2rem));
+  padding: .75rem 1rem .75rem 1.1rem;
+
+  background: var(--surface);
+  border: 0.0938rem solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, .18);
+
+  font-family: var(--font, system-ui), sans-serif;
+  font-size: .865rem;
+  color: var(--text);
+
+  opacity: 0;
+  pointer-events: none;
+  z-index: 500;
+
+  /* cubic-bezier(.34,1.28,.64,1) : légère "élasticité" en fin de montée */
+  transition:
+    transform .28s cubic-bezier(.34, 1.28, .64, 1),
+    opacity   .22s ease;
+}
+
+/* ── État visible ────────────────────────────────────────── */
+.toast--visible {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ── Icône ───────────────────────────────────────────────── */
+/* Cercle coloré 22px — la couleur de fond et du texte est définie
+   par les variantes .toast--* ci-dessous. */
+.toast__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-size: .75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+/* ── Message ─────────────────────────────────────────────── */
+/* flex:1 → le message prend tout l'espace entre l'icône et le bouton × */
+.toast__msg {
+  flex: 1;
+  line-height: 1.45;
+}
+
+/* ── Bouton fermer ───────────────────────────────────────── */
+/* Carré 26×26px pour une zone tactile confortable (min recommandé 44px
+   WCAG 2.5.5, mais 26px est acceptable pour un élément secondaire). */
+.toast__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--text-sub);
+  transition: background .12s, color .12s;
+}
+.toast__close:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+.toast__close:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+
+/* ── Variantes de type ───────────────────────────────────── */
+/* Chaque variante ajoute une bordure gauche colorée + colore l'icône.
+   Le fond blanc/surface reste identique pour toutes (moins agressif qu'un
+   fond entièrement coloré). */
+.toast--success {
+  border-left: 4px solid var(--green);
+}
+.toast--success .toast__icon {
+  background: #ecfdf5;
+  color: var(--green);
+}
+
+.toast--error {
+  border-left: 4px solid var(--red);
+}
+.toast--error .toast__icon {
+  background: #fef2f2;
+  color: var(--red);
+}
+
+.toast--info {
+  border-left: 4px solid var(--blue);
+}
+.toast--info .toast__icon {
+  background: #eff6ff;
+  color: var(--blue);
+}
+
+.toast--warning {
+  border-left: 4px solid var(--orange);
+}
+.toast--warning .toast__icon {
+  background: #fffbeb;
+  color: var(--orange);
+}
+
+/* ── Dark mode toast ──────────────────────────────────────── */
+/* Fonds des icônes plus sombres pour ne pas créer de "tache" claire
+   sur le fond --surface dark. */
+[data-theme="dark"] .toast--success .toast__icon {
+  background: #052e16;
+  color: var(--green);
+}
+[data-theme="dark"] .toast--error .toast__icon {
+  background: #3b0a0a;
+  color: var(--red);
+}
+[data-theme="dark"] .toast--info .toast__icon {
+  background: #1e3a5f;
+  color: var(--blue);
+}
+[data-theme="dark"] .toast--warning .toast__icon {
+  background: #2d1a00;
+  color: var(--orange);
+}
+
+/* ── Mobile toast ────────────────────────────────────────── */
+/* Sur très petit écran (<480px), le toast prend toute la largeur
+   moins 2×1rem de marges. min-width:0 lève la contrainte de 260px. */
+@media (max-width: 480px) {
+  .toast {
+    bottom: 1rem;
+    min-width: 0;
+    width: calc(100vw - 2rem);
+  }
+}
+
+/* ── Colonne actions du tableau (dépenses) ─────────────────── */
+/* width:1% + white-space:nowrap = "colonne la plus étroite possible"
+   Technique CSS pour coller une colonne à son contenu quand la largeur
+   dépend du nombre de boutons et non d'un pourcentage fixe. */
+.col-actions {
+  width: 1%;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* Groupe de boutons action aligné à droite (éditer + supprimer) */
+.actions-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+/* ════════════════════════════════════════════════════════════
+   FOCUS CLAVIER — surcharges finales
+   Ces règles s'appliquent APRÈS les règles de focus en haut du fichier
+   et les précisent pour certains contextes (boutons, inputs, liens).
+   Note : les règles :focus-visible ici surchargent celles du début ;
+   le résultat net est un anneau bleu uniforme via box-shadow.
+   ════════════════════════════════════════════════════════════ */
+
+:focus {
+  outline: none;   /* réaffirme la suppression de l'outline navigateur */
+}
+
+/* box-shadow double : anneau intérieur sombre (#1e293b) + anneau extérieur bleu.
+   Technique "focus ring with offset" — plus visible sur n'importe quel fond. */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px #1e293b, 0 0 0 4px #3b82f6;
+  border-radius: 8px;
+}
+
+/* Boutons : anneau bleu transparent (plus doux que le double anneau global) */
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+/* Inputs, selects, textareas : anneau bleu transparent (cohérent avec .field input:focus) */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+/* ════════════════════════════════════════════════════════════
+   UTILS
+   Classes utilitaires pures (une seule propriété CSS).
+   Permettent d'éviter les styles inline dans les templates
+   et de composer des micro-layouts sans créer de nouveau sélecteur.
+   ════════════════════════════════════════════════════════════ */
+
+.flex        { display: flex; }
+.inline-flex { display: inline-flex; }
+
+.items-center    { align-items: center; }
+.justify-between { justify-content: space-between; }
+
+.wrap { flex-wrap: wrap; }
+
+/* Gaps en rem (nommés d'après la valeur en rem × 10 pour éviter le point dans le nom) */
+.gap-05 { gap: .5rem; }
+.gap-04 { gap: .4rem; }
+.gap-03 { gap: .3rem; }
+
+.ml-05  { margin-left: .5rem; }
+.mt-075 { margin-top: .75rem; }
+
+/* .hidden : masque complètement un élément (y compris aux AT — ne pas utiliser
+   pour du contenu fonctionnel, préférer .sr-only dans ce cas). */
+.hidden { display: none !important; }
+
+/* Largeur fixe pour la colonne d'actions compactes */
+.w-actions { width: 5rem; }
+
+/* Troncature avec ellipsis à 200px — plus permissif que .truncate-cell
+   (utilisé pour les libellés de dépenses dans l'overview). */
+.truncate-200 {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Groupe de boutons compacts (edit + delete miniatures dans le tableau) */
+.actions-compact {
+  display: flex;
+  gap: .3rem;
+}
+
+/* .btn-mini : variante extra-petite pour les boutons dans un tableau dense */
+.btn-mini {
+  padding: .28rem .5rem;
+  font-size: .7rem;
+}
+
+/* .form-reset : retire les marges par défaut d'un élément <form>
+   quand le form est utilisé comme wrapper inline (ex : formulaire de suppression
+   unitaire dans le tbody — évite que la form crée un espace vertical). */
+.form-reset {
+  margin: 0;
+}

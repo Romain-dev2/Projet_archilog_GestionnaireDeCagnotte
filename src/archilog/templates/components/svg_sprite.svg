@@ -1,0 +1,183 @@
+<!--
+  components/svg_sprite.svg
+  ─────────────────────────────────────────────────────────────────────────
+  Sprite SVG global — inclus UNE SEULE FOIS depuis base.html juste après
+  <body>, avec display:none (le contenu n'est pas rendu visuellement).
+
+  Utilisation dans n'importe quel template ou composant :
+      <svg width="15" height="15" aria-hidden="true">
+        <use href="#icon-house"></use>
+      </svg>
+
+  Avantages du sprite inline vs icônes séparées :
+    • Pas de requête HTTP supplémentaire par icône.
+    • Héritage de couleur via stroke="currentColor" ou fill="currentColor" :
+      changer color: en CSS suffit à recolorer toutes les icônes.
+    • Les <symbol> peuvent être réutilisés N fois sans duplication de code.
+
+  Conventions de nommage :
+    • icon-*       : icônes génériques (navigation, actions, utilitaires)
+    • icon-*-sm    : variante petite taille (trash-sm = bouton compact)
+    • icon-*-circle : variante avec cercle englobant (check-circle)
+
+  stroke vs fill :
+    • stroke="currentColor" : icônes de type outline (trait, pas de remplissage)
+    • fill="currentColor"   : icônes de type filled (remplissage plein)
+    Les deux icônes trash (icon-trash et icon-trash-sm) ont le même path SVG
+    mais des tailles d'utilisation différentes (delete-bar vs bouton compact).
+  ─────────────────────────────────────────────────────────────────────────
+-->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+
+  {# ── Navigation ──────────────────────────────────────────────────────── #}
+
+  <!-- Maison — lien "Retour aux cagnottes" (back-link) -->
+  <symbol id="icon-house" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+    <polyline points="9 21 9 12 15 12 15 21"/>
+  </symbol>
+
+  <!-- Flèche gauche — lien "Retour aux dépenses" (edit_depense, import_csv) -->
+  <symbol id="icon-arrow-left" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 12H5"/>
+    <polyline points="12 19 5 12 12 5"/>
+  </symbol>
+
+  {# ── Onglets ──────────────────────────────────────────────────────────── #}
+
+  <!-- Tendance / graphe — onglet "Vue d'ensemble" -->
+  <symbol id="icon-trend" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+    <polyline points="16 7 22 7 22 13"/>
+  </symbol>
+
+  <!-- Presse-papier / liste — onglet "Dépenses" -->
+  <symbol id="icon-list" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+    <rect x="9" y="3" width="6" height="4" rx="1"/>
+    <line x1="9" y1="12" x2="15" y2="12"/>
+    <line x1="9" y1="16" x2="12" y2="16"/>
+  </symbol>
+
+  <!-- Balance — onglet "Équilibre" -->
+  <symbol id="icon-scale" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2v20"/>
+    <path d="M2 12h20"/>
+    <path d="M5 6l-3 6h6L5 6z"/>
+    <path d="M19 6l-3 6h6l-3-6z"/>
+    <line x1="5" y1="20" x2="19" y2="20"/>
+  </symbol>
+
+  <!-- Plus dans un cercle — onglet "Ajouter" et onglet "Nouvelle cagnotte" -->
+  <symbol id="icon-plus" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <line x1="12" y1="8" x2="12" y2="16"/>
+    <line x1="8" y1="12" x2="16" y2="12"/>
+  </symbol>
+
+  <!-- Grille 2×2 — onglet "Cagnottes" (liste) -->
+  <symbol id="icon-grid" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3"  y="3"  width="7" height="7"/>
+    <rect x="14" y="3"  width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/>
+    <rect x="3"  y="14" width="7" height="7"/>
+  </symbol>
+
+  {# ── Actions ──────────────────────────────────────────────────────────── #}
+
+  <!--
+    Poubelle (fill, taille normale) — icône dans la delete-bar.
+    fill="currentColor" → icône "pleine" (plus lisible à petite taille).
+    icon-trash et icon-trash-sm partagent le même path SVG ; on les sépare
+    car ils sont utilisés dans des contextes visuels différents (taille de
+    rendu dans le CSS : 14px pour la delete-bar, 11px pour les boutons).
+  -->
+  <symbol id="icon-trash" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M11.3232 1.5C11.9365 1.50011 12.4881 1.87396 12.7158 2.44336L13.3379 4H17.5L17.6006 4.00977C17.8285 4.0563 18 4.25829 18 4.5C18 4.7417 17.8285 4.94371 17.6006 4.99023L17.5 5H15.9629L15.0693 16.6152C15.0091 17.3965 14.3578 17.9999 13.5742 18H6.42578C5.6912 17.9999 5.07237 17.4697 4.94824 16.7598L4.93066 16.6152L4.03711 5H2.5C2.22387 5 2.00002 4.77613 2 4.5C2 4.22386 2.22386 4 2.5 4H6.66211L7.28418 2.44336L7.33105 2.33887C7.58152 1.82857 8.10177 1.5001 8.67676 1.5H11.3232ZM5.92773 16.5381C5.94778 16.7985 6.16464 16.9999 6.42578 17H13.5742C13.8354 16.9999 14.0522 16.7985 14.0723 16.5381L14.9609 5H5.03906L5.92773 16.5381ZM8.5 8C8.77613 8 8.99998 8.22388 9 8.5V13.5C9 13.7761 8.77614 14 8.5 14C8.22386 14 8 13.7761 8 13.5V8.5C8.00002 8.22388 8.22387 8 8.5 8ZM11.5 8C11.7761 8 12 8.22386 12 8.5V13.5C12 13.7761 11.7761 14 11.5 14C11.2239 14 11 13.7761 11 13.5V8.5C11 8.22386 11.2239 8 11.5 8ZM8.67676 2.5C8.49802 2.5001 8.33492 2.59525 8.24609 2.74609L8.21289 2.81445L7.73828 4H12.2617L11.7871 2.81445C11.7112 2.62471 11.5276 2.50011 11.3232 2.5H8.67676Z"/>
+  </symbol>
+
+  <!-- Poubelle (fill, taille compacte) — bouton de suppression unitaire dans le tableau -->
+  <symbol id="icon-trash-sm" viewBox="0 0 20 20" fill="currentColor">
+    <path d="M11.3232 1.5C11.9365 1.50011 12.4881 1.87396 12.7158 2.44336L13.3379 4H17.5L17.6006 4.00977C17.8285 4.0563 18 4.25829 18 4.5C18 4.7417 17.8285 4.94371 17.6006 4.99023L17.5 5H15.9629L15.0693 16.6152C15.0091 17.3965 14.3578 17.9999 13.5742 18H6.42578C5.6912 17.9999 5.07237 17.4697 4.94824 16.7598L4.93066 16.6152L4.03711 5H2.5C2.22387 5 2.00002 4.77613 2 4.5C2 4.22386 2.22386 4 2.5 4H6.66211L7.28418 2.44336L7.33105 2.33887C7.58152 1.82857 8.10177 1.5001 8.67676 1.5H11.3232ZM5.92773 16.5381C5.94778 16.7985 6.16464 16.9999 6.42578 17H13.5742C13.8354 16.9999 14.0522 16.7985 14.0723 16.5381L14.9609 5H5.03906L5.92773 16.5381ZM8.5 8C8.77613 8 8.99998 8.22388 9 8.5V13.5C9 13.7761 8.77614 14 8.5 14C8.22386 14 8 13.7761 8 13.5V8.5C8.00002 8.22388 8.22387 8 8.5 8ZM11.5 8C11.7761 8 12 8.22386 12 8.5V13.5C12 13.7761 11.7761 14 11.5 14C11.2239 14 11 13.7761 11 13.5V8.5C11 8.22386 11.2239 8 11.5 8ZM8.67676 2.5C8.49802 2.5001 8.33492 2.59525 8.24609 2.74609L8.21289 2.81445L7.73828 4H12.2617L11.7871 2.81445C11.7112 2.62471 11.5276 2.50011 11.3232 2.5H8.67676Z"/>
+  </symbol>
+
+  <!-- Crayon / édition — bouton "Modifier" dans le tableau des dépenses -->
+  <symbol id="icon-edit" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </symbol>
+
+  <!-- Croix — bouton "Fermer" des modals et du toast -->
+  <symbol id="icon-close" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+    <line x1="18" y1="6"  x2="6"  y2="18"/>
+    <line x1="6"  y1="6"  x2="18" y2="18"/>
+  </symbol>
+
+  {# ── Utilitaires ──────────────────────────────────────────────────────── #}
+
+  <!-- Loupe — barre de recherche (depenses.html) -->
+  <symbol id="icon-search" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="11" cy="11" r="8"/>
+    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+  </symbol>
+
+  <!-- Flèche montante vers plateau — bouton "Importer CSV" -->
+  <symbol id="icon-upload" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="17 8 12 3 7 8"/>
+    <line x1="12" y1="3" x2="12" y2="15"/>
+  </symbol>
+
+  <!-- Flèche descendante depuis plateau — bouton "Exporter CSV" -->
+  <symbol id="icon-download" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </symbol>
+
+  <!--
+    Coche simple — bouton done-toggle (page Équilibre) et icônes toast succès.
+    stroke-width="2.5" légèrement plus épais pour la lisibilité à 14px.
+  -->
+  <symbol id="icon-check" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </symbol>
+
+  <!--
+    Coche dans un cercle — message "Tout est équilibré" (cagnotte.html,
+    equilibre_depenses.html) et état "Tous les virements effectués".
+  -->
+  <symbol id="icon-check-circle" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2.5"
+          stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+    <polyline points="22 4 12 14.01 9 11.01"/>
+  </symbol>
+
+</svg>

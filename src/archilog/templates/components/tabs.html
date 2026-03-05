@@ -1,0 +1,100 @@
+{#
+  components/tabs.html
+  ─────────────────────────────────────────────────────────────────────────
+  Macros de navigation par onglets. Importées via macros.html.
+
+  Deux macros exposées :
+    • tabs_cagnotte(nom, active) — onglets d'une cagnotte (Vue d'ensemble,
+                                   Dépenses, Équilibre, Ajouter)
+    • tabs_home(active)          — onglets de la page d'accueil
+                                   (Cagnottes, Nouvelle cagnotte)
+
+  Paramètre `active` : chaîne correspondant à la valeur de l'onglet courant
+  (ex : 'depenses', 'overview'). Détermine la classe CSS .active et
+  l'attribut aria-selected pour l'accessibilité.
+
+  Accessibilité :
+    - role="tablist" sur le conteneur.
+    - role="tab" + aria-selected sur chaque onglet.
+    - Les icônes SVG sont aria-hidden="true" (décoration, texte adjacent suffit).
+    - L'indicateur actif est géré visuellement par CSS (border-bottom) ET
+      sémantiquement par aria-selected="true".
+
+  Note : les onglets sont des <a> (liens) et non des <button> car ils
+  changent l'URL — comportement natif du navigateur (historique, copie lien).
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{# ── Onglets d'une cagnotte ── #}
+{% macro tabs_cagnotte(nom, active) %}
+<div class="tabs" role="tablist">
+
+  {# Vue d'ensemble : chiffres clés, dernières dépenses, remboursements #}
+  <a class="tab {{ 'active' if active == 'overview' }}"
+     href="{{ url_for('cagnotte_detail', nom=nom) }}"
+     role="tab" aria-selected="{{ 'true' if active == 'overview' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-trend"></use></svg>
+    </span>
+    <span>Vue d'ensemble</span>
+  </a>
+
+  {# Dépenses : liste complète avec tri, filtre, suppression, export #}
+  <a class="tab {{ 'active' if active == 'depenses' }}"
+     href="{{ url_for('cagnotte_depenses', nom=nom) }}"
+     role="tab" aria-selected="{{ 'true' if active == 'depenses' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-list"></use></svg>
+    </span>
+    <span>Dépenses</span>
+  </a>
+
+  {# Équilibre : calcul des remboursements, toggle effectué/non-effectué #}
+  <a class="tab {{ 'active' if active == 'equilibre' }}"
+     href="{{ url_for('cagnotte_equilibre', nom=nom) }}"
+     role="tab" aria-selected="{{ 'true' if active == 'equilibre' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-scale"></use></svg>
+    </span>
+    <span>Équilibre</span>
+  </a>
+
+  {# Ajouter : formulaire de saisie rapide d'une dépense #}
+  <a class="tab {{ 'active' if active == 'ajouter' }}"
+     href="{{ url_for('cagnotte_ajouter', nom=nom) }}"
+     role="tab" aria-selected="{{ 'true' if active == 'ajouter' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-plus"></use></svg>
+    </span>
+    <span>Ajouter</span>
+  </a>
+
+</div>
+{% endmacro %}
+
+{# ── Onglets de la page d'accueil ── #}
+{% macro tabs_home(active) %}
+<div class="tabs" role="tablist">
+
+  {# Liste des cagnottes existantes #}
+  <a class="tab {{ 'active' if active == 'cagnottes' }}"
+     href="{{ url_for('home') }}"
+     role="tab" aria-selected="{{ 'true' if active == 'cagnottes' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-grid"></use></svg>
+    </span>
+    <span>Cagnottes</span>
+  </a>
+
+  {# Formulaire de création d'une nouvelle cagnotte #}
+  <a class="tab {{ 'active' if active == 'new' }}"
+     href="{{ url_for('new_cagnotte') }}"
+     role="tab" aria-selected="{{ 'true' if active == 'new' else 'false' }}">
+    <span class="tab-icon" aria-hidden="true">
+      <svg width="13" height="13"><use href="#icon-plus"></use></svg>
+    </span>
+    <span>Nouvelle cagnotte</span>
+  </a>
+
+</div>
+{% endmacro %}

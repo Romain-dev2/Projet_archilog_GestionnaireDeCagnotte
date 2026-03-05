@@ -1,0 +1,65 @@
+# pyproject.toml — Archilog
+# ─────────────────────────────────────────────────────────────────────────
+# Fichier de configuration unique du projet (PEP 517/518/621).
+# Gère : métadonnées du package, dépendances, scripts CLI,
+#        configuration pytest et paramètres du build backend uv.
+# ─────────────────────────────────────────────────────────────────────────
+
+[project]
+name        = "archilog"
+version     = "0.1"
+description = "Archilog — gestion de cagnottes partagées (projet pédagogique)."
+readme      = "README.md"
+
+# Python 3.11 minimum : requis pour tomllib (stdlib), match/case amélioré,
+# et les annotations de type utilisées dans domain.py.
+requires-python = ">=3.11"
+
+# ── Dépendances de production ─────────────────────────────────────────────
+dependencies = [
+  "click>=8.1", # Interface en ligne de commande (commandes création, ajout, calcul…)
+  "flask>=3.0", # Framework web : routes, templates Jinja, messages flash, test_client
+  "sqlalchemy>=2.0.48", # ORM + Core SQL : connexion SQLite, transactions, migrations légères
+]
+
+# ── Dépendances optionnelles (développement) ──────────────────────────────
+[project.optional-dependencies]
+dev = [
+  # Framework de test : pytest.fixture, assert, CliRunner, test_client
+  "pytest>=8.0",
+]
+
+# ── Point d'entrée CLI ────────────────────────────────────────────────────
+# Installe la commande `archilog` dans le PATH après `pip install .` ou `uv sync`.
+# Pointe vers le groupe Click `cli` dans archilog/cli.py.
+[project.scripts]
+archilog = "archilog.cli:cli"
+
+# ── Build backend ─────────────────────────────────────────────────────────
+# uv_build est le backend natif de uv (remplace setuptools/flit pour les
+# projets gérés avec uv). Respecte PEP 517.
+[build-system]
+requires      = ["uv_build>=0.9.26,<0.10.0"]
+build-backend = "uv_build"
+
+# ── Configuration pytest ──────────────────────────────────────────────────
+[tool.pytest.ini_options]
+# Répertoire de découverte des tests : pytest ne cherche que dans tests/.
+testpaths = ["tests"]
+# -q : sortie compacte (une ligne par test au lieu du nom complet).
+# Retirer -q pour avoir les noms complets lors du débogage : python -m pytest tests -v
+addopts = "-q"
+
+# ── Configuration uv build backend ───────────────────────────────────────
+# Contrôle ce qui est inclus dans les archives de distribution :
+#   - source-include : tests/ est inclus dans le .tar.gz (archive source)
+#     → permet aux contributeurs de lancer les tests après `pip download`.
+#   - wheel-exclude  : tests/ est EXCLU du .whl (wheel binaire installable)
+#     → les utilisateurs finaux n'ont pas besoin des tests.
+[tool.uv.build-backend]
+source-include = [
+  "tests/**",
+]
+wheel-exclude = [
+  "tests/**",
+]

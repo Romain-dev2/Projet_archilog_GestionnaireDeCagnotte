@@ -1,0 +1,79 @@
+{#
+  components/modal_delete_depenses.html
+  ─────────────────────────────────────────────────────────────────────────
+  Modal de confirmation de suppression de dépenses.
+  Inclus depuis depenses.html.
+
+  Fonctionnement :
+    - L'overlay est invisible par défaut (display:none via CSS).
+    - openDeleteModal(msg, onConfirm) dans depenses.js injecte le message
+      dans #deleteConfirmMsg et stocke le callback en attente.
+    - Le bouton #deleteConfirmBtn exécute le callback puis ferme le modal.
+    - closeDeleteModal() annule et ferme (bouton "Annuler" + clic overlay + Échap).
+
+  Accessibilité :
+    - role="dialog" + aria-modal="true" : les lecteurs d'écran traitent
+      le modal comme une boîte de dialogue isolée.
+    - aria-labelledby="deleteConfirmTitle" : annonce le titre au focus.
+    - Le focus doit être géré par JS.
+    (focus trap) :
+        - La .modal-box reçoit tabindex="-1" pour pouvoir recevoir le focus
+          si aucun élément focusable n'est disponible ou pour un focus initial
+          contrôlé par JS.
+        - Le bouton "Annuler" reçoit data-autofocus pour servir de cible de
+          focus initial (recommandé sur un modal destructif).
+        - Le piégeage du focus (Tab / Shift+Tab) doit être implémenté dans
+          depenses.js lors de l'ouverture/fermeture du modal.
+          (Voir la partie modifiée dans depenses.js : activate/deactivate focus trap)
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{# L'overlay prend tout l'écran (position:fixed, z-index:300 dans style.css).
+   Un clic sur l'overlay (hors .modal-box) ferme le modal — géré dans depenses.js. #}
+<div class="modal-overlay" id="deleteConfirmModal">
+  {# tabindex="-1" permet de focus la boîte au besoin (fallback / accessibilité)
+     et aide le JS pour gérer correctement le focus trap. #}
+  <div class="modal-box"
+       tabindex="-1"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="deleteConfirmTitle">
+
+    <div class="modal-header">
+      <span class="modal-title" id="deleteConfirmTitle">Confirmer la suppression</span>
+      {# onclick inline autorisé ici : closeDeleteModal() est une fonction globale
+         définie dans depenses.js, exposée sur window. #}
+      <button type="button" class="modal-close"
+              onclick="closeDeleteModal()"
+              aria-label="Fermer">
+        <svg width="16" height="16"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+
+    {# Section rouge "Action irréversible" — le message est injecté dynamiquement
+       par depenses.js dans #deleteConfirmMsg selon le contexte (1 ou N dépenses). #}
+    <div class="section red" style="margin:.75rem 0 1rem;">
+      <div class="section-title">Action irréversible</div>
+      <p id="deleteConfirmMsg" style="margin:0;"></p>
+    </div>
+
+    <div class="btn-row">
+      {# deleteConfirmBtn : le listener de clic est attaché dans depenses.js
+         (DOMContentLoaded) et non ici, pour garder toute la logique dans le JS. #}
+      <button type="button" class="btn btn-danger-solid" id="deleteConfirmBtn">
+        <svg width="12" height="12" aria-hidden="true">
+          <use href="#icon-trash-sm"></use>
+        </svg>
+        <span>Supprimer définitivement</span>
+      </button>
+
+      {# data-autofocus : repère pour depenses.js afin de placer le focus ici
+         à l'ouverture (choix “safe” sur une action destructrice). #}
+      <button class="btn btn-ghost"
+              type="button"
+              data-autofocus
+              onclick="closeDeleteModal()">Annuler</button>
+    </div>
+
+  </div>
+</div>

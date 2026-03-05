@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{% block title %}Archilog — {{ nom }} · Équilibre{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <a class="back-link" href="{{ url_for('home') }}">
+    <svg width="15" height="15"><use href="#icon-house"></use></svg>
+    <span>Toutes les cagnottes</span>
+  </a>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ nom }}</h1>
+    <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+  </div>
+
+  {# Onglet "Équilibre" actif #}
+  {{ tabs_cagnotte(nom, 'equilibre') }}
+
+  <div class="card">
+    <div class="card-title">Calcul de l'équilibre</div>
+
+    {# ── Chiffres clés ── #}
+    <div class="section purple">
+      <div class="section-title">Récapitulatif</div>
+      <div class="stat-row">
+        <div class="stat">
+          <span class="stat-label">Total dépenses</span>
+          <span class="stat-value">{{ calcul.total }}€</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Part individuelle</span>
+          <span class="stat-value">{{ calcul.part }}€</span>
+        </div>
+        <div class="stat">
+          <span class="stat-label">Remboursements</span>
+          <span class="stat-value">{{ calcul.transactions|length }}</span>
+        </div>
+        {# Compteur "Effectués" mis à jour par main.js (toggleRemboursement)
+           via #cptEffectues. La classe stat-nb-green applique la couleur verte. #}
+        {% set nb_effectues = calcul.transactions | selectattr('effectue') | list | length %}
+        <div class="stat">
+          <span class="stat-label">Effectués</span>
+          <span class="stat-value{% if nb_effectues > 0 %} stat-nb-green{% endif %}"
+                id="cptEffectues">
+            {{ nb_effectues }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    {% if calcul.transactions %}
+    {# ── Tableau des remboursements ── #}
+    <div class="section orange">
+      <div class="section-title">Remboursements à effectuer</div>
+      <p style="font-size:.78rem;color:var(--text-sub);margin-bottom:.75rem;">
+        Cochez une ligne pour la marquer comme remboursée, sans recharger la page.
+      </p>
+      <table class="table">
+        <thead>
+          <tr>
+            {# Colonne "Effectué" sans libellé visible (action, pas donnée) #}
+            <th scope="col" style="width:2.5rem;"><span class="sr-only">Effectué</span></th>
+            <th scope="col">Débiteur</th>
+            {# Colonne flèche : séparateur visuel, pas de sens sémantique #}
+            <th scope="col"><span class="sr-only">Direction</span></th>
+            <th scope="col">Créditeur</th>
+            <th scope="col">Montant</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in calcul.transactions %}
+          {#
+            id="tr-N"   → ciblé par toggleRemboursement() dans main.js pour
+                          ajouter/retirer la classe .done-row.
+            .done-row   → ligne rayée (style.css) quand le remboursement est effectué.
+          #}
+          <tr id="tr-{{ loop.index0 }}"
+              class="{{ 'done-row' if t.effectue else '' }}">
+            <td>
+              {#
+                Bouton toggle AJAX.
+                data-sig = signature du remboursement (format "debiteur|crediteur|montant").
+                           Transmise au endpoint /remboursement/toggle via FormData.
+                data-idx = index pour cibler #tr-N et #btn-N dans main.js.
+                onclick → toggleRemboursement(this) dans main.js (window).
+              #}
+              <button type="button"
+                      class="done-toggle {{ 'done-toggle--on' if t.effectue }}"
+                      id="btn-{{ loop.index0 }}"
+                      data-sig="{{ t.signature }}"
+                      data-idx="{{ loop.index0 }}"
+                      onclick="toggleRemboursement(this)"
+                      title="{{ 'Marquer comme non effectué' if t.effectue else 'Marquer comme effectué' }}">
+                <svg width="14" height="14"><use href="#icon-check"></use></svg>
+              </button>
+            </td>
+            <td><strong>{{ t.debiteur }}</strong></td>
+            <td class="arrow">→</td>
+            <td>{{ t.crediteur }}</td>
+            <td class="mono">{{ t.montant }}€</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% else %}
+    {# Empty state : aucune transaction nécessaire #}
+    <div class="section green">
+      <div class="section-title">Tout est équilibré !</div>
+      <p style="display:flex;align-items:center;gap:.5rem;">
+        <svg width="16" height="16" style="color:var(--green);flex-shrink:0;">
+          <use href="#icon-check-circle"></use>
+        </svg>
+        Aucun remboursement nécessaire, les dépenses sont parfaitement réparties.
+      </p>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{#
+  window.TOGGLE_URL : URL du endpoint Flask toggle_remboursement().
+  Injectée ici car url_for() n'est pas accessible depuis un fichier JS statique.
+  Consommée par toggleRemboursement() dans main.js.
+#}
+<script>
+  window.TOGGLE_URL = "{{ url_for('toggle_remboursement', nom=nom) }}";
+</script>
+{% endblock %}

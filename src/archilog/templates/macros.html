@@ -1,0 +1,35 @@
+{#
+  macros.html — Archilog  (point d'entrée unique)
+  ════════════════════════════════════════════════════════════════════════
+  Ce fichier re-expose toutes les macros du projet afin que les pages
+  n'aient qu'un seul import à gérer :
+
+      {% from "macros.html" import tabs_cagnotte %}
+      {% from "macros.html" import tabs_home %}
+
+  Implémentation réelle dans components/ :
+      • Onglets       → components/tabs.html
+      • SVG sprite    → components/svg_sprite.svg  (include dans base.html)
+      • Footer        → components/footer.html       (include dans base.html)
+      • Modal édition → components/modal_edit_depense.html (include dans depenses.html)
+
+  Macros retirées (maintenant gérées par base.html directement) :
+      • head_dark()   → script inline dans <head> de base.html
+      • dark_toggle() → bouton inline dans <body> de base.html
+      • svg_sprite()  → {% include "components/svg_sprite.svg" %}
+      • footer()      → {% include "components/footer.html" %}
+  ════════════════════════════════════════════════════════════════════════
+#}
+
+{# Re-export des onglets — implémentation dans components/tabs.html #}
+{% import "components/tabs.html" as tabs %}
+
+{# Délègue à tabs.tabs_cagnotte(nom, active) — voir components/tabs.html #}
+{% macro tabs_cagnotte(nom, active) %}
+  {{ tabs.tabs_cagnotte(nom, active) }}
+{% endmacro %}
+
+{# Délègue à tabs.tabs_home(active) — voir components/tabs.html #}
+{% macro tabs_home(active) %}
+  {{ tabs.tabs_home(active) }}
+{% endmacro %}

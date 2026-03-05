@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{#
+  cagnottes/confirm_delete.html
+  ─────────────────────────────────────────────────────────────────────────
+  Page de confirmation avant suppression définitive.
+  Gère deux cas selon les variables disponibles dans le contexte :
+    • Suppression simple  : variable `nom` (str) fournie par confirm_delete()
+    • Suppression multiple : variable `noms` (list[str]) fournie par
+                             confirm_delete_multiple()
+
+  La logique de détection est résolue côté template (set is_multiple)
+  pour éviter de dupliquer deux templates presque identiques.
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{# is_multiple = True si la liste `noms` est définie et non vide #}
+{% set is_multiple = noms is defined and noms | length > 0 %}
+{% set nb          = noms | length if is_multiple else 1 %}
+
+{% block title %}Archilog — Supprimer {{ nb }} cagnotte{{ 's' if nb > 1 }}{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">
+      Supprimer {{ nb }} cagnotte{{ 's' if nb > 1 }}
+    </h1>
+    <p class="page-subtitle">Cette action est irréversible.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Confirmation requise</div>
+
+    {# Section rouge : résumé de ce qui va être supprimé #}
+    <div class="section red">
+      <div class="section-title">Action irréversible</div>
+
+      {% if is_multiple %}
+        {# Cas : plusieurs cagnottes — liste les noms pour éviter les suppressions accidentelles #}
+        <p>
+          Vous êtes sur le point de supprimer les
+          <strong>{{ nb }} cagnottes</strong> suivantes
+          ainsi que <strong>toutes leurs dépenses associées</strong> :
+        </p>
+        <ul style="margin:.6rem 0 0 1rem;line-height:2;">
+          {% for n in noms %}
+            <li><strong>« {{ n }} »</strong></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        {# Cas : une seule cagnotte #}
+        <p>
+          Vous êtes sur le point de supprimer la cagnotte
+          <strong>« {{ nom }} »</strong>
+          ainsi que <strong>toutes ses dépenses associées</strong>.
+        </p>
+      {% endif %}
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="btn-row">
+      {% if is_multiple %}
+        {# Formulaire POST vers delete_cagnottes_multiple — les noms sont
+           transmis dans un input caché, séparés par des virgules. #}
+        <form method="post" action="{{ url_for('delete_cagnottes_multiple') }}">
+          <input type="hidden" name="noms" value="{{ noms | join(',') }}">
+          <button class="btn btn-danger-solid" type="submit">
+            <svg width="12" height="12" aria-hidden="true"><use href="#icon-trash-sm"></use></svg>
+            Oui, supprimer les {{ nb }} cagnottes
+          </button>
+        </form>
+      {% else %}
+        {# Formulaire POST vers delete_cagnotte avec le nom dans l'URL #}
+        <form method="post" action="{{ url_for('delete_cagnotte', nom=nom) }}">
+          <button class="btn btn-danger-solid" type="submit">
+            <svg width="12" height="12" aria-hidden="true"><use href="#icon-trash-sm"></use></svg>
+            Oui, supprimer définitivement
+          </button>
+        </form>
+      {% endif %}
+
+      {# Lien de retour : pas de formulaire ici car "Annuler" ne soumet rien #}
+      <a class="btn btn-ghost" href="{{ url_for('home') }}">Annuler</a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

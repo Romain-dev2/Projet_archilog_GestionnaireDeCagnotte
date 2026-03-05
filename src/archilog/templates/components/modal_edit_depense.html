@@ -1,0 +1,109 @@
+{#
+  components/modal_edit_depense.html
+  ─────────────────────────────────────────────────────────────────────────
+  Modal d'édition d'une dépense via AJAX.
+  Inclus depuis depenses.html.
+
+  Fonctionnement :
+    - openEditModal(btn) dans depenses.js préremplie les champs depuis
+      les attributs data-* et les cellules de la ligne <tr> cliquée.
+    - submitEdit(e) intercepte la soumission du formulaire et envoie
+      une requête POST vers /cagnotte/<nom>/depense/<id>/update.
+    - En cas de succès, les cellules de la ligne sont mises à jour en place.
+    - En cas d'erreur, #editError est affiché dans le modal.
+
+  Pourquoi un formulaire plutôt qu'une route pleine page ?
+    → Évite un rechargement complet et préserve la position du scroll,
+      le filtre de recherche et l'état de sélection.
+
+  Accessibilité :
+    - role="dialog" + aria-modal + aria-labelledby.
+    - Les labels sont liés aux inputs via for/id.
+    - Le focus initial est mis sur #editParticipant par depenses.js.
+    - Le focus doit être géré par JS.
+    (focus trap) :
+        - La .modal-box reçoit tabindex="-1" pour pouvoir recevoir le focus
+          (fallback si aucun élément focusable n'est disponible / focus initial).
+        - Le focus initial reste sur #editParticipant (comme déjà prévu),
+          mais le JS doit boucler Tab / Shift+Tab à l'intérieur du modal.
+        - Le piégeage du focus (Tab / Shift+Tab) doit être implémenté dans
+          depenses.js lors de l'ouverture/fermeture du modal.
+  ─────────────────────────────────────────────────────────────────────────
+#}
+
+{# L'overlay prend tout l'écran (position:fixed, z-index:300).
+   Un clic sur l'overlay ferme le modal — géré dans depenses.js. #}
+<div class="modal-overlay" id="editModal">
+  {# tabindex="-1" permet de focus la boîte au besoin (fallback / accessibilité)
+     et aide le JS pour gérer correctement le focus trap. #}
+  <div class="modal-box"
+       tabindex="-1"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="modalTitle">
+
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitle">Modifier la dépense</span>
+      {# onclick inline : closeModal() est une fonction globale dans depenses.js #}
+      <button type="button" class="modal-close" onclick="closeModal()" aria-label="Fermer">
+        <svg width="16" height="16"><use href="#icon-close"></use></svg>
+      </button>
+    </div>
+
+    {# onsubmit inline : submitEdit() intercepte la soumission native
+       et envoie la requête AJAX à la place. #}
+    <form id="editForm" onsubmit="submitEdit()">
+      {# id SQL de la dépense : transmis à l'URL du endpoint AJAX par depenses.js #}
+      <input type="hidden" id="editId" value="">
+
+      {# Champ participant avec combobox d'autocomplétion (combo-wrap / combo-dropdown).
+         La liste de suggestions est initialisée par initCombobox() dans depenses.js
+         après l'ouverture du modal, avec window.PARTICIPANTS injecté par depenses.html. #}
+      <div class="field">
+        <label for="editParticipant">Participant</label>
+        <div class="combo-wrap">
+          {# Rien à changer côté HTML pour l'autofocus : le focus initial est déjà
+             géré par depenses.js sur #editParticipant.
+             Le focus trap, lui, doit être géré dans depenses.js. #}
+          <input type="text" id="editParticipant" name="participant"
+                 autocomplete="off" placeholder="Ex : Romain, Alice…" required>
+          <div class="combo-dropdown" id="editParticipantDropdown"></div>
+        </div>
+      </div>
+
+      <div class="form-grid" style="margin-top:.75rem;">
+        <div class="field">
+          <label for="editDate">Date</label>
+          {# type="date" : valeur attendue au format YYYY-MM-DD.
+             depenses.js convertit DD/MM/YYYY (data-date de la ligne) → YYYY-MM-DD. #}
+          <input type="date" id="editDate" name="date">
+        </div>
+        <div class="field">
+          <label for="editMontant">Montant (€)</label>
+          <input type="number" id="editMontant" name="montant"
+                 step="0.01" min="0.01" required>
+        </div>
+        {# .full : colonne pleine largeur dans .form-grid (voir style.css) #}
+        <div class="field full">
+          <label for="editLibelle">
+            Libellé <span class="field-optional">(optionnel)</span>
+          </label>
+          <input type="text" id="editLibelle" name="libelle" placeholder="Ex : Courses…">
+        </div>
+      </div>
+
+      {# Zone d'erreur AJAX — masquée par défaut, affichée par depenses.js en cas d'échec #}
+      <div id="editError" class="modal-error" style="display:none;"></div>
+
+      <div class="btn-row" style="margin-top:1rem;">
+        {# Le bouton est désactivé pendant l'appel réseau (depenses.js)
+           pour éviter le double-envoi. #}
+        <button type="submit" class="btn btn-primary" id="editSubmitBtn">
+          Enregistrer les modifications
+        </button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal()">Annuler</button>
+      </div>
+    </form>
+
+  </div>
+</div>

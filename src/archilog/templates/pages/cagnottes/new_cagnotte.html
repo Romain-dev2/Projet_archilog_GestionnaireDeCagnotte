@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_home %}
+
+{% block title %}Archilog — Nouvelle cagnotte{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <h1 class="page-title">Archilog — Gestion de Cagnottes</h1>
+    <p class="page-subtitle">Créez des cagnottes partagées et suivez les dépenses de chaque participant.</p>
+  </div>
+
+  {# Onglet "Nouvelle cagnotte" actif #}
+  {{ tabs_home('new') }}
+
+  <div class="card">
+    <div class="card-title">Créer une nouvelle cagnotte</div>
+
+    <div class="section purple">
+      <div class="section-title">Informations de la cagnotte</div>
+      <p>Nom unique + description optionnelle pour identifier la cagnotte.</p>
+    </div>
+
+    {#
+      Formulaire POST vers create_cagnotte (views.py).
+      Pattern PRG : la route POST redirige vers / après traitement,
+      évitant la double soumission sur F5.
+    #}
+    <form method="post" action="{{ url_for('create_cagnotte') }}" style="margin-top:1.25rem;">
+      <div class="form-grid">
+        {# .full : colonne pleine largeur dans la grille à 2 colonnes #}
+        <div class="field full">
+          <label for="nom">Nom</label>
+          {# required : validation native HTML ; maxlength cohérent avec la contrainte BDD #}
+          <input id="nom" name="nom"
+                 placeholder="Ex : Week-end ski, Voyage NYC, Annif Léa…"
+                 required maxlength="60">
+        </div>
+        <div class="field full">
+          <label for="description">Description
+            <span class="field-optional">(optionnel)</span>
+          </label>
+          <textarea id="description" name="description"
+                    placeholder="Objectif, participants, règles de partage…"
+                    maxlength="200"></textarea>
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" type="submit">Créer la cagnotte</button>
+        <a class="btn btn-ghost" href="{{ url_for('home') }}">Annuler</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}

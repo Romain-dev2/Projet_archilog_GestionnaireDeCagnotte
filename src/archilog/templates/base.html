@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Archilog{% endblock %}</title>
+
+  {#
+    ── Script anti-flash thème (DOIT rester inline dans <head>, AVANT le CSS) ──
+    Lit localStorage et pose data-theme sur <html> immédiatement,
+    avant que le navigateur commence à peindre la page.
+    Sans cela, un flash blanc est visible au chargement en mode sombre.
+
+    Note : la valeur par défaut est 'dark'. Si la clé n'existe pas encore
+    dans localStorage (première visite), l'utilisateur démarre en mode sombre.
+  #}
+  <script>
+    (function () {
+      let t = localStorage.getItem('archilog_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  {# Bloc pour les <link>, <meta> ou <script> supplémentaires propres à une page #}
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+  {#
+    ── SVG Sprite ────────────────────────────────────────────────────────────
+    Inclus UNE SEULE FOIS ici, juste après <body>, en display:none.
+    Toutes les icônes du projet y font référence via <use href="#icon-xxx">.
+    Charger le sprite ici évite une requête réseau séparée par icône (HTTP/1)
+    et permet l'héritage de couleur CSS (currentColor).
+  #}
+  {% include "components/svg_sprite.svg" %}
+
+  {# Bloc principal — chaque page surcharge ce bloc avec son propre contenu #}
+  {% block content %}{% endblock %}
+
+  {#
+    ── Barre de contrôles fixe (thème uniquement) ────────────────────────────
+    Positionnée en haut à droite (position:fixed dans style.css / .ctrl-bar-fixed).
+    id="darkToggle" → l'écouteur de clic est attaché dans main.js (toggleDark),
+    PAS inline avec onclick="" pour rester conforme CSP.
+    aria-label sur le bouton expose l'action aux lecteurs d'écran.
+  #}
+  <div class="ctrl-bar-fixed" role="toolbar" aria-label="Contrôles interface">
+    <button class="ctrl-btn" id="darkToggle"
+            title="Changer de thème"
+            aria-label="Changer de thème">
+      {# L'icône est mise à jour par main.js au DOMContentLoaded selon le thème actif #}
+      <span id="darkIcon">☀️</span>
+    </button>
+  </div>
+
+  {% include "components/footer.html" %}
+
+  {#
+    ── Toast / snackbar ──────────────────────────────────────────────────────
+    Rendu ici pour être au-dessus de tout le contenu (z-index élevé dans style.css).
+    Les messages flash Flask sont injectés via un bloc <script> inline
+    dans toast.html — c'est le seul JS inline autorisé (nécessaire pour
+    passer les données Jinja → JavaScript sans XHR supplémentaire).
+  #}
+  {% include "components/toast.html" %}
+
+  {# main.js est chargé en dernier pour que le DOM soit déjà construit.
+     Il expose window.initCombobox, window.showToast, window.toggleRemboursement. #}
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+  {# Bloc pour les scripts spécifiques à une page (selection.js, home.js, depenses.js…) #}
+  {% block scripts %}{% endblock %}
+
+</body>
+</html>

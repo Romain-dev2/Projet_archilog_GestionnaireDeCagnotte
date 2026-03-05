@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{% block title %}Archilog — {{ nom }} · Ajouter{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <a class="back-link" href="{{ url_for('home') }}">
+    <svg width="15" height="15"><use href="#icon-house"></use></svg>
+    <span>Toutes les cagnottes</span>
+  </a>
+
+  <div class="page-header">
+    <h1 class="page-title">{{ nom }}</h1>
+    <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+  </div>
+
+  {# Onglet "Ajouter" actif #}
+  {{ tabs_cagnotte(nom, 'ajouter') }}
+
+  <div class="card">
+    <div class="card-title">Ajouter une dépense</div>
+
+    {#
+      POST vers add_depense() (views.py).
+      Pattern PRG : redirige vers cagnotte_depenses après insertion.
+    #}
+    <form method="post" action="{{ url_for('add_depense', nom=nom) }}"
+          style="margin-top:.25rem;">
+      <div class="form-grid">
+
+        {# Champ participant avec combobox d'autocomplétion.
+           Initialisée par le bloc <script> en bas de page. #}
+        <div class="field">
+          <label for="addParticipant">Participant</label>
+          <div class="combo-wrap">
+            <input name="participant" id="addParticipant"
+                   placeholder="Ex : Romain, Alice…"
+                   autocomplete="off" required maxlength="25">
+            <div class="combo-dropdown" id="addParticipantDropdown"></div>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="add-date">Date</label>
+          {# today = date du jour ISO (YYYY-MM-DD), injectée par views.py (_today_iso()).
+             Prérempli pour accélérer la saisie. #}
+          <input id="add-date" name="date" type="date" value="{{ today }}">
+        </div>
+
+        <div class="field full">
+          <label for="add-montant">Montant (€)</label>
+          {# step="0.01" + min="0.01" : validation native HTML cohérente
+             avec la validation côté serveur (montant >= 0.01). #}
+          <input id="add-montant" name="montant" type="number" step="0.01" min="0.01"
+                 placeholder="Ex : 34.50" required>
+        </div>
+
+        <div class="field full">
+          <label for="add-libelle">Libellé
+            <span class="field-optional">(optionnel)</span>
+          </label>
+          <input id="add-libelle" name="libelle"
+                 placeholder="Ex : Courses Monoprix, AirBnB nuit 1…">
+        </div>
+      </div>
+
+      <div class="btn-row" style="margin-top:1rem;">
+        <button class="btn btn-primary" type="submit">Enregistrer la dépense</button>
+        <a class="btn btn-ghost"
+           href="{{ url_for('cagnotte_detail', nom=nom) }}">Annuler</a>
+      </div>
+    </form>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+{#
+  window.PARTICIPANTS est injecté ici pour être consommé par initCombobox().
+  initCombobox() est fournie par main.js (déjà chargé via base.html).
+  L'appel est immédiat (pas de DOMContentLoaded) car ce script s'exécute
+  après que le DOM est déjà parsé (script en fin de body dans base.html).
+#}
+<script>
+  window.PARTICIPANTS = {{ participants | tojson }};
+  initCombobox('addParticipant', 'addParticipantDropdown', window.PARTICIPANTS);
+</script>
+{% endblock %}

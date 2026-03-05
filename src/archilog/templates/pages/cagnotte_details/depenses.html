@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+{% from "macros.html" import tabs_cagnotte %}
+
+{% block title %}Archilog — {{ nom }} · Dépenses{% endblock %}
+
+{% block content %}
+    <div class="page">
+
+        <a class="back-link" href="{{ url_for('home') }}">
+            <svg width="15" height="15">
+                <use href="#icon-house"></use>
+            </svg>
+            <span>Toutes les cagnottes</span>
+        </a>
+
+        <div class="page-header">
+            <h1 class="page-title">{{ nom }}</h1>
+            <p class="page-subtitle">Dépenses, participants et calcul de remboursement.</p>
+        </div>
+
+        {# Onglet "Dépenses" actif #}
+        {{ tabs_cagnotte(nom, 'depenses') }}
+
+        {#
+          Modals inclus ici pour appartenir au même DOM que la table.
+          depenses.js gère l'ouverture/fermeture des deux modals.
+          Ils doivent être présents avant le chargement de depenses.js.
+        #}
+        {% include "components/modal_edit_depense.html" %}
+        {% include "components/modal_delete_depenses.html" %}
+
+        <div class="card">
+            <div class="card-title flex items-center justify-between wrap gap-05">
+                <span>
+                    <span>Historique des dépenses</span>
+                    {# Compteur mis à jour par Jinja (static) — pas mis à jour après suppression AJAX.
+                    <span class="tag tag-blue ml-05" id="depensesCount">{{ depenses|length }}</span>
+                  </span>
+                {# Boutons import/export affichés seulement s'il y a des dépenses #}
+                {% if depenses %}
+                    <div class="flex gap-05 wrap">
+                        <a class="btn btn-ghost inline-flex items-center gap-04"
+                           href="{{ url_for('import_csv_route', nom=nom) }}">
+                            <svg width="13" height="13">
+                                <use href="#icon-upload"></use>
+                            </svg>
+                            Importer CSV
+                        </a>
+                        <a class="btn btn-success inline-flex items-center gap-04"
+                           href="{{ url_for('export_csv', nom=nom) }}">
+                            <svg width="13" height="13">
+                                <use href="#icon-download"></use>
+                            </svg>
+                            Exporter CSV
+                        </a>
+                    </div>
+                {% endif %}
+                </span>
+            </div>
+
+            <div class="section blue">
+                <div class="section-title">Toutes les dépenses</div>
+
+                {% if depenses %}
+
+                    {# ── Barre de recherche ── #}
+                    {# oninput → filterTable() dans depenses.js filtre les lignes en temps réel
+                       via l'attribut data-search de chaque <tr>. #}
+                    <div class="search-bar">
+                        <svg width="14" height="14" aria-hidden="true">
+                            <use href="#icon-search"></use>
+                        </svg>
+                        <label for="searchInput" class="sr-only">Filtrer les dépenses</label>
+                        <input type="text" id="searchInput"
+                               placeholder="Filtrer par participant ou libellé…"
+                               oninput="filterTable(this.value)" autocomplete="off">
+                        {# Bouton "×" masqué par défaut, affiché par depenses.js quand
+                           le champ contient du texte (.hidden retiré). #}
+                        <button type="button" onclick="clearSearch()" id="clearBtn"
+                                class="search-clear hidden" aria-label="Effacer la recherche">x</button>
+                    </div>
+
+                    {# ── Delete action bar ── #}
+                    {# Fixe en bas de l'écran, visible via .visible (ajouté par depenses.js). #}
+                    <div class="delete-bar" id="deleteBar">
+                        <svg width="14" height="14" aria-hidden="true">
+                            <use href="#icon-trash"></use>
+                        </svg>
+                        <span class="delete-bar-text" id="deleteBarText">0 sélectionnée(s)</span>
+                        <button type="button" class="btn btn-ghost" onclick="clearSelection()">Annuler</button>
+                        <button type="button" class="btn btn-danger-solid" onclick="submitMultiDelete()">
+                            <svg width="12" height="12" aria-hidden="true">
+                                <use href="#icon-trash-sm"></use>
+                            </svg>
+                            Supprimer
+                        </button>
+                    </div>
+
+                    {#
+                      Formulaire caché pour la suppression multiple.
+                      depenses.js remplit #hiddenIndices avec les indices sélectionnés
+                      (0-based, séparés par virgule) puis soumet ce formulaire.
+                    #}
+                    <form id="multiDeleteForm" method="POST"
+                          action="{{ url_for('delete_depenses', nom=nom) }}" class="hidden">
+                        <input type="hidden" name="indices" id="hiddenIndices" value="">
+                    </form>
+
+                    {#
+                      ── Tableau des dépenses ────────────────────────────────────────────
+                      id="depensesTable" → référencé par selection.js et depenses.js.
+                      id="tbody"         → référencé par sortTable() dans depenses.js.
+
+                      Attributs data-* sur chaque <tr> :
+                        data-idx     → index 0-based utilisé comme clé de sélection
+                        data-id      → id SQL pour la route d'édition
+                        data-montant → valeur numérique pour le tri montant
+                        data-date    → valeur DD/MM/YYYY pour le tri date
+                        data-search  → chaîne en minuscules pour le filtre en temps réel
+                    #}
+                    <table class="table" id="depensesTable">
+                        <thead>
+                        <tr>
+                            <th class="td-check" scope="col">
+                                <label for="checkAll" class="sr-only">Tout sélectionner / désélectionner</label>
+                                <input type="checkbox" class="row-checkbox" id="checkAll">
+                            </th>
+                            <th scope="col">#</th>
+                            <th scope="col">Participant</th>
+                            <th scope="col">Libellé</th>
+
+                            {# Colonnes triables : tabindex="0" → navigables au clavier.
+                               data-col → utilisé par bindSortableHeaders() dans depenses.js. #}
+                            <th class="th-sort" scope="col" data-col="montant"
+                                tabindex="0"
+                                title="Trier par montant">
+                                Montant <span class="sort-icon" id="sort-montant">⇅</span>
+                            </th>
+
+                            <th class="th-sort" scope="col" data-col="date"
+                                tabindex="0"
+                                title="Trier par date">
+                                Date <span class="sort-icon" id="sort-date">⇅</span>
+                            </th>
+
+                            <th scope="col" class="w-actions"><span class="sr-only">Actions</span></th>
+                        </tr>
+                        </thead>
+
+                        <tbody id="tbody">
+                        {% for d in depenses %}
+                            <tr id="row-{{ loop.index0 }}"
+                                data-idx="{{ loop.index0 }}"
+                                data-id="{{ d.id }}"
+                                data-montant="{{ d.montant }}"
+                                data-date="{{ d.date or '' }}"
+                                data-search="{{ d.participant|lower }} {{ (d.libelle or '')|lower }}">
+                                <td class="td-check">
+                                    {# onchange → onRowCheck() exposé par depenses.js depuis selection.js #}
+                                    <input type="checkbox" class="row-checkbox dep-check"
+                                           data-idx="{{ loop.index0 }}"
+                                           aria-label="Sélectionner la dépense de
+                                                   {{ d.participant }}{% if d.libelle %} — {{ d.libelle }}{% endif %}"
+                                           onchange="onRowCheck(this)">
+                                </td>
+                                {# .row-num : renumérote les lignes après un tri (depenses.js) #}
+                                <td class="muted row-num">{{ loop.index }}</td>
+                                <td class="cell-participant"><strong>{{ d.participant }}</strong></td>
+                                {# .truncate-200 : troncature CSS après 200 px (style.css) #}
+                                <td class="muted cell-libelle truncate-200">
+                                    {{ d.libelle or "—" }}
+                                </td>
+                                <td class="mono cell-montant">{{ d.montant }}€</td>
+                                <td class="muted cell-date">{{ d.date or "—" }}</td>
+                                <td class="actions-compact">
+                                    {#
+                                      Bouton d'édition : href pointe vers la page edit_depense
+                                      (fallback si JS désactivé). depenses.js intercepte le clic
+                                      pour ouvrir le modal AJAX à la place.
+                                    #}
+                                    <a class="btn btn-ghost edit-btn btn-mini"
+                                       href="{{ url_for('edit_depense', nom=nom, depense_id=d.id) }}"
+                                       data-id="{{ d.id }}"
+                                       aria-label="Modifier la dépense de
+                                               {{ d.participant }}{% if d.libelle %} — {{ d.libelle }}{% endif %}">
+                                        <svg width="11" height="11" aria-hidden="true">
+                                            <use href="#icon-edit"></use>
+                                        </svg>
+                                    </a>
+
+                                    {#
+                                      Formulaire de suppression unitaire.
+                                      .single-delete-form → intercepté par depenses.js
+                                      pour passer par le modal de confirmation.
+                                      data-confirm → message affiché dans le modal.
+                                      Sans JS, la soumission native envoie directement le POST.
+                                    #}
+                                    <form method="POST"
+                                          action="{{ url_for('delete_depenses', nom=nom) }}"
+                                          class="single-delete-form form-reset"
+                                          data-confirm="Supprimer cette dépense ? Cette action est irréversible.">
+                                        <input type="hidden" name="indices" value="{{ loop.index0 }}">
+                                        <button type="submit" class="btn btn-danger btn-mini"
+                                                aria-label="Supprimer la dépense de
+                                                        {{ d.participant }}{% if d.libelle %} — {{ d.libelle }}{% endif %}">
+                                            <svg width="11" height="11" aria-hidden="true">
+                                                <use href="#icon-trash-sm"></use>
+                                            </svg>
+                                        </button>
+                                    </form>
+
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+
+                    {# Affiché par depenses.js si la recherche ne retourne aucun résultat #}
+                    <p id="noResults" class="empty hidden mt-075">
+                        Aucune dépense ne correspond à la recherche.
+                    </p>
+
+                {% else %}
+                    {# Empty state : pas de dépenses #}
+                    <p class="empty" style="margin-bottom:1rem;">
+                        Aucune dépense enregistrée pour l'instant.
+                    </p>
+                {% endif %}
+            </div>
+
+            {# CTA import/ajout affiché uniquement si la cagnotte est vide #}
+            {% if not depenses %}
+                <div class="divider"></div>
+
+                <div class="btn-row">
+                    <a class="btn btn-primary" href="{{ url_for('cagnotte_ajouter' , nom=nom) }}">
+                        <svg width="13" height="13" aria-hidden="true">
+                            <use href="#icon-list"></use>
+                        </svg>
+                        Ajouter une dépense
+                    </a>
+                    <a class="btn btn-primary"
+                       href="{{ url_for('import_csv_route', nom=nom) }}">Importer CSV</a>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    {#
+      Variables Jinja injectées en JS pour être consommées par depenses.js :
+        window.NOM          → nom de la cagnotte pour construire les URLs AJAX
+        window.PARTICIPANTS → liste pour l'autocomplétion du modal d'édition
+    #}
+    <script>
+        window.NOM = {{ nom | tojson }};
+        window.PARTICIPANTS = {{ participants | tojson }};
+    </script>
+    {# selection.js doit être chargé AVANT depenses.js #}
+    <script src="{{ url_for('static', filename='js/selection.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/depenses.js') }}"></script>
+{% endblock %}
