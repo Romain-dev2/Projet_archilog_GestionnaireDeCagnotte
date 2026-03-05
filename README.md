@@ -60,20 +60,13 @@
 
 Le projet suit une architecture **n-tier** telle que présentée en cours :
 
-```
-Utilisateur
-    │
-    ├── CLI (cli.py)       ┐
-    └── GUI / Flask        ┘  views  →  domain (domain.py)  →  data (data.py)  →  SQLite
-                                        logique métier           repository
-```
 
-| Couche | Fichier | Rôle |
-|---|---|---|
-| **views** | `views.py` + `cli.py` | Interfaces utilisateur (HTTP et terminal) |
-| **domain** | `domain.py` | Logique métier — `CagnotteService` |
-| **data** | `data.py` | Accès base de données — `CagnotteRepository` (SQLAlchemy Core, pas ORM) |
-| **storage** | fichier `.db` | SQLite via le système de fichiers |
+| Couche      | Fichier               | Rôle                                                                    |
+|-------------|-----------------------|-------------------------------------------------------------------------|
+| **views**   | `views.py` + `cli.py` | Interfaces utilisateur (HTTP et terminal)                               |
+| **domain**  | `domain.py`           | Logique métier — `CagnotteService`                                      |
+| **data**    | `data.py`             | Accès base de données — `CagnotteRepository` (SQLAlchemy Core, pas ORM) |
+| **storage** | fichier `.db`         | SQLite via le système de fichiers                                       |
 
 ---
 
@@ -311,27 +304,27 @@ Les tests utilisent une base SQLite **en mémoire** : rien n'est écrit sur
 le disque, chaque test repart d'une base vide, l'ordre d'exécution est
 sans importance.
 
-| Fichier | Ce qui est testé |
-|---|---|
-| `test_smoke.py` | Routes HTTP — codes de statut et redirections (PRG) |
+| Fichier          | Ce qui est testé                                                          |
+|------------------|---------------------------------------------------------------------------|
+| `test_smoke.py`  | Routes HTTP — codes de statut et redirections (PRG)                       |
 | `test_routes.py` | Intégration Flask — HTML rendu, messages flash, isolation inter-cagnottes |
-| `test_domain.py` | Logique métier — calculs d'équilibre, CRUD, participants |
-| `test_cli.py` | Toutes les commandes Click |
+| `test_domain.py` | Logique métier — calculs d'équilibre, CRUD, participants                  |
+| `test_cli.py`    | Toutes les commandes Click                                                |
 
 ---
 
 ## Variables d'environnement
 
-| Variable | Valeur par défaut | Description |
-|---|---|---|
+| Variable              | Valeur par défaut               | Description                                                                                                                      |
+|-----------------------|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
 | `ARCHILOG_SECRET_KEY` | clé aléatoire (non persistante) | Clé Flask pour signer les sessions et les messages flash. **À définir si on veut des sessions persistantes entre redémarrages.** |
-| `ARCHILOG_DB_PATH` | voir ci-dessous | Chemin complet vers le fichier SQLite. Utile pour utiliser une base de test séparée. |
+| `ARCHILOG_DB_PATH`    | voir ci-dessous                 | Chemin complet vers le fichier SQLite. Utile pour utiliser une base de test séparée.                                             |
 
 **Emplacement par défaut de la base :**
 
-| OS | Chemin |
-|---|---|
-| Windows | `%APPDATA%\archilog\archilog.db` |
+| OS            | Chemin                                |
+|---------------|---------------------------------------|
+| Windows       | `%APPDATA%\archilog\archilog.db`      |
 | Linux / macOS | `~/.local/share/archilog/archilog.db` |
 
 Définir une variable pour la session PowerShell en cours :
