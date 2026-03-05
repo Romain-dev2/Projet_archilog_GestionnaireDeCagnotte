@@ -310,13 +310,10 @@ uv sync --extra dev
 Puis :
 ```powershell
 # Tous les tests (sortie compacte)
-uv run pytest tests
-
-# Sortie détaillée (nom complet de chaque test)
 uv run pytest tests -v
 
 # Sortie détaillée (nom complet de chaque test)
-uv run pytest tests -v
+uv run pytest tests -vv
 
 # Filtrer par nom de test ou de classe
 uv run pytest tests -v -k "calcul"
