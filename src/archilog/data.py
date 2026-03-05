@@ -90,7 +90,7 @@ engine: Engine = create_engine(ENGINE_URL, echo=False, future=True)
 
 
 @event.listens_for(engine, "connect")
-def _set_sqlite_pragma(dbapi_connection):
+def _set_sqlite_pragma(dbapi_connection, _connection_record):
     try:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")

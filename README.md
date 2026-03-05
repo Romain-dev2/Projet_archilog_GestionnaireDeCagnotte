@@ -82,6 +82,16 @@ python --version
 uv --version
 ```
 
+Si `uv` n'est pas installé :
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Si `Python` n'est pas installé :
+```powershell
+winget install Python.Python.3.14
+```
+
 ---
 
 ## Du .tar.gz au projet opérationnel — démarrage rapide
@@ -98,8 +108,8 @@ lancer l'application, le CLI et les tests — sans rien oublier.
 mkdir archilog-projet
 cd archilog-projet
 
-# Extraire l'archive (tar est disponible nativement sur Windows 10+)
-tar -xzf C:\chemin\vers\messager_romain.tar.gz
+# Extraire l'archive à mettre dans le dossier
+tar -xzf messager_romain.tar.gz
 
 # Se placer dans le dossier extrait
 cd archilog-0.1
@@ -119,8 +129,13 @@ ls pyproject.toml   # doit afficher le fichier sans erreur
 
 ### Étape 2 — Installer les dépendances
 
+Avec tests :
 ```powershell
 uv sync --extra dev
+```
+Sans tests :
+```powershell
+uv sync
 ```
 
 `uv sync` lit `pyproject.toml`, crée automatiquement `.venv\`, et installe :
@@ -141,8 +156,7 @@ uv run archilog --help
 Si la liste des commandes s'affiche, l'installation est correcte.
 
 ```powershell
-# Vérifier aussi l'emplacement de la base de données
-uv run archilog db-path
+uv run archilog db-path # Vérifier aussi l'emplacement de la base de données
 ```
 
 ---
@@ -284,9 +298,22 @@ uv run archilog db-path
 
 ## Exécuter les tests
 
+Besoin de la dépendance `pytest` pour pouvoir lancer les tests :
+```powershell
+uv sync --extra dev
+```
+en cas d'erreur :
+```powershell
+uv run  # config le .venv
+uv sync --extra dev
+```
+Puis :
 ```powershell
 # Tous les tests (sortie compacte)
 uv run pytest tests
+
+# Sortie détaillée (nom complet de chaque test)
+uv run pytest tests -v
 
 # Sortie détaillée (nom complet de chaque test)
 uv run pytest tests -v
