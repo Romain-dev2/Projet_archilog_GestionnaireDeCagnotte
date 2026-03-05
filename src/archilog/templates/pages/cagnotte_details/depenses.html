@@ -31,8 +31,7 @@
 
         <div class="card">
             <div class="card-title flex items-center justify-between wrap gap-05">
-                <span>
-                    <span>Historique des dépenses</span>
+                <span>Historique des dépenses</span>
                     {# Compteur mis à jour par Jinja (static) — pas mis à jour après suppression AJAX.
                     <span class="tag tag-blue ml-05" id="depensesCount">{{ depenses|length }}</span>
                   </span>
@@ -55,7 +54,6 @@
                         </a>
                     </div>
                 {% endif %}
-                </span>
             </div>
 
             <div class="section blue">
@@ -232,7 +230,7 @@
             {% if not depenses %}
                 <div class="divider"></div>
 
-                <div class="btn-row">
+                <div class="btn-row" >
                     <a class="btn btn-primary" href="{{ url_for('cagnotte_ajouter' , nom=nom) }}">
                         <svg width="13" height="13" aria-hidden="true">
                             <use href="#icon-list"></use>

@@ -108,7 +108,10 @@ lancer l'application, le CLI et les tests — sans rien oublier.
 mkdir archilog-projet
 cd archilog-projet
 
-# Extraire l'archive à mettre dans le dossier
+# Mettre le .tar.gz dans le dossier
+mv ../messager_romain.tar.gz # chemin relatif
+
+# Extraire l'archive
 tar -xzf messager_romain.tar.gz
 
 # Se placer dans le dossier extrait
@@ -166,15 +169,28 @@ uv run archilog db-path # Vérifier aussi l'emplacement de la base de données
 ```powershell
 uv run flask --app archilog.views --debug run
 ```
+En cas d'erreur du style :
+```powershell
+error: Failed to spawn: `flask`
+  Caused by: Une stratégie de contrôle d’application a bloqué ce fichier. (os error 4551)
+```
+Faire :
+```powershell
+uv run python -m flask --app archilog.views --debug run
+```
 
 Ouvrir [http://127.0.0.1:5000](http://127.0.0.1:5000) dans le navigateur.
+
+```powershell
+CTR+C  # pour quitter Flask
+```
 
 ---
 
 ### Étape 5 — Lancer les tests
 
 ```powershell
-uv run pytest tests
+uv run pytest tests -v
 ```
 
 Si tous les tests passent en vert, l'installation est complète et fonctionnelle.
@@ -197,7 +213,7 @@ uv run archilog --help
 uv run flask --app archilog.views --debug run
 
 # 5. Lancer les tests
-uv run pytest tests
+uv run pytest tests -v
 ```
 
 ---
@@ -208,6 +224,9 @@ uv run pytest tests
 
 ```powershell
 uv run flask --app archilog.views --debug run
+```
+```powershell
+CTR+C  # pour quitter Flask
 ```
 
 Le flag `--debug` active :
